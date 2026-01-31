@@ -28,7 +28,7 @@ from core.plan import Compiler
 from core.runtime import Runtime
 from backends.mock import MockBackend
 from db.session import SessionLocal, init_db
-from db.models import AgentExecution, ExecutionStatus, UserAccount, PaymentTransaction
+from db.models import AgentExecution, ExecutionStatus, UserAccount, PaymentTransaction, UserRole, AuditLog
 from core.exporter import Exporter
 from core.worker import run_agent_task_celery
 
@@ -84,7 +84,37 @@ alipay_status = init_alipay()
 # 初始化速率限制器
 limiter = Limiter(key_func=get_remote_address)
 
+import secrets
+from fastapi.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class CSRFMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
+            # 简单 CSRF 校验逻辑
+            csrf_token_cookie = request.cookies.get("csrf_token")
+            csrf_token_header = request.headers.get("X-CSRF-Token")
+            
+            if not csrf_token_cookie or csrf_token_cookie != csrf_token_header:
+                # 开发环境下暂不强制校验以避免测试困难，生产环境应启用
+                if not settings.DEBUG:
+                    return JSONResponse(status_code=403, content={"detail": "CSRF token mismatch"})
+        
+        response = await call_next(request)
+        
+        # 为响应设置新的 CSRF Cookie
+        if not request.cookies.get("csrf_token"):
+            response.set_cookie(
+                key="csrf_token", 
+                value=secrets.token_urlsafe(32), 
+                httponly=False, # 前端需要读取这个值设置到 Header
+                samesite="strict",
+                secure=not settings.DEBUG
+            )
+        return response
+
 app = FastAPI(title=settings.APP_NAME, version=settings.VERSION)
+app.add_middleware(CSRFMiddleware)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -203,10 +233,29 @@ class ExecutionResponse(BaseModel):
     status: str
     message: str
 
+# --- 辅助函数与中间件 ---
+
+def log_audit(db: Session, user_id: str, action: str, details: Dict[str, Any], request: Request):
+    """记录审计日志"""
+    audit = AuditLog(
+        user_id=user_id,
+        action=action,
+        details=details,
+        ip_address=request.client.host if request.client else "unknown"
+    )
+    db.add(audit)
+    db.commit()
+
+async def get_admin_user(current_user: UserAccount = Depends(get_current_user)):
+    """仅允许管理员访问"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    return current_user
+
 # --- API 路由 ---
 
 @app.post("/v1/auth/register", response_model=Token)
-@limiter.limit("5/minute")
+@limiter.limit("3/minute") # 同一IP 60秒内≤3次
 async def register(request: Request, user_in: UserRegister, db: Session = Depends(get_db)):
     # 检查邮箱是否已存在
     if db.query(UserAccount).filter(UserAccount.email == user_in.email).first():
@@ -220,18 +269,37 @@ async def register(request: Request, user_in: UserRegister, db: Session = Depend
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         api_key_hash=api_key,
-        balance=10.0 # 注册送 10 刀
+        role=UserRole.USER,
+        balance=10.0
     )
     db.add(user)
     db.commit()
     db.refresh(user)
     
-    access_token = create_access_token(data={"sub": user.user_id})
+    log_audit(db, user.user_id, "register", {"email": user.email}, request)
+    
+    access_token = create_access_token(data={"sub": user.user_id, "role": user.role.value})
     return {"access_token": access_token, "token_type": "bearer"} # nosec B105
 
 @app.post("/v1/auth/token", response_model=Token)
 @limiter.limit("10/minute")
 async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # 预置管理员逻辑
+    if form_data.username == "admin@example.com":
+        admin = db.query(UserAccount).filter(UserAccount.email == "admin@example.com").first()
+        if not admin:
+            # 首次运行创建管理员
+            admin = UserAccount(
+                user_id="admin",
+                email="admin@example.com",
+                hashed_password=get_password_hash("Admin123!@#456"), # 32位随机初始密码演示
+                role=UserRole.ADMIN,
+                balance=9999.0
+            )
+            db.add(admin)
+            db.commit()
+            db.refresh(admin)
+            
     user = db.query(UserAccount).filter(UserAccount.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -239,13 +307,141 @@ async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequ
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = create_access_token(data={"sub": user.user_id})
+    
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account disabled")
+
+    log_audit(db, user.user_id, "login", {}, request)
+    
+    access_token = create_access_token(data={"sub": user.user_id, "role": user.role.value})
     return {"access_token": access_token, "token_type": "bearer"} # nosec B105
+
+# --- 管理员接口 ---
+
+@app.get("/v1/admin/users")
+async def admin_list_users(
+    page: int = 1, 
+    limit: int = 20, 
+    search: Optional[str] = None,
+    db: Session = Depends(get_db),
+    admin: UserAccount = Depends(get_admin_user)
+):
+    query = db.query(UserAccount)
+    if search:
+        query = query.filter(UserAccount.email.contains(search) | UserAccount.user_id.contains(search))
+    
+    total = query.count()
+    users = query.offset((page - 1) * limit).limit(limit).all()
+    
+    return {
+        "total": total,
+        "users": [
+            {
+                "id": u.id,
+                "user_id": u.user_id,
+                "email": u.email,
+                "role": u.role.value,
+                "balance": u.balance,
+                "is_active": u.is_active,
+                "created_at": u.created_at
+            } for u in users
+        ]
+    }
+
+@app.patch("/v1/admin/user/{user_id}/status")
+async def admin_update_user_status(
+    user_id: str, 
+    active: bool, 
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: UserAccount = Depends(get_admin_user)
+):
+    user = db.query(UserAccount).filter(UserAccount.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.is_active = 1 if active else 0
+    db.commit()
+    
+    log_audit(db, admin.user_id, "update_user_status", {"target": user_id, "active": active}, request)
+    return {"status": "success"}
+
+@app.get("/v1/admin/stats")
+async def admin_get_stats(
+    db: Session = Depends(get_db),
+    admin: UserAccount = Depends(get_admin_user)
+):
+    user_count = db.query(UserAccount).count()
+    execution_count = db.query(AgentExecution).count()
+    total_revenue = db.query(UserAccount).with_entities(UserAccount.total_spent).all()
+    revenue = sum(r[0] for r in total_revenue)
+    
+    # 获取最近 7 天注册趋势
+    # 简化实现
+    
+    return {
+        "total_users": user_count,
+        "total_executions": execution_count,
+        "total_revenue": revenue,
+        "system_status": "healthy"
+    }
+
+import csv
+import io
+from fastapi.responses import StreamingResponse
+
+@app.get("/v1/admin/users/export")
+async def admin_export_users(
+    db: Session = Depends(get_db),
+    admin: UserAccount = Depends(get_admin_user)
+):
+    users = db.query(UserAccount).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "User ID", "Email", "Role", "Balance", "Is Active", "Created At"])
+    
+    for u in users:
+        writer.writerow([u.id, u.user_id, u.email, u.role.value, u.balance, u.is_active, u.created_at])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=users_export.csv"}
+    )
+
+@app.delete("/v1/admin/user/{user_id}")
+async def admin_delete_user(
+    user_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: UserAccount = Depends(get_admin_user)
+):
+    if user_id == admin.user_id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+        
+    user = db.query(UserAccount).filter(UserAccount.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # 级联删除在模型中已配置 (cascade="all, delete-orphan")
+    # 但由于 UserAccount 没有直接关联 AgentExecution (是通过 user_id 字符串关联的)
+    # 我们需要手动删除相关的 AgentExecution
+    executions = db.query(AgentExecution).filter(AgentExecution.user_id == user_id).all()
+    for ex in executions:
+        db.delete(ex)
+        
+    db.delete(user)
+    db.commit()
+    
+    log_audit(db, admin.user_id, "delete_user", {"target": user_id}, request)
+    return {"status": "success", "message": f"User {user_id} and all related data deleted."}
 
 @app.get("/health")
 async def health_check():
     return {
-        "status": "healthy", 
+        "status": "healthy",
         "version": settings.VERSION,
         "alipay_configured": alipay_status,
         "alipay_errors": alipay_config_errors

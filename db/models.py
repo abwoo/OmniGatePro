@@ -63,6 +63,10 @@ class ActionTrace(Base):
 
     execution = relationship("AgentExecution", back_populates="actions")
 
+class UserRole(PyEnum):
+    USER = "user"
+    ADMIN = "admin"
+
 class UserAccount(Base):
     """
     商业化：用户账户模型，管理余额和 API 权限。
@@ -74,6 +78,8 @@ class UserAccount(Base):
     email = Column(String(128), unique=True, index=True)
     hashed_password = Column(String(128))
     api_key_hash = Column(String(128), unique=True, index=True)
+    
+    role = Column(Enum(UserRole), default=UserRole.USER)
     
     stripe_customer_id = Column(String(128), unique=True, index=True)
     
@@ -87,6 +93,19 @@ class UserAccount(Base):
     totp_secret = Column(String(32), nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class AuditLog(Base):
+    """
+    系统审计日志。
+    """
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(64), index=True)
+    action = Column(String(64))  # login, register, delete_user, etc.
+    details = Column(JSON)
+    ip_address = Column(String(45))
+    timestamp = Column(DateTime, default=datetime.utcnow)
 
 class PaymentTransaction(Base):
     """

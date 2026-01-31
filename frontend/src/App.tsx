@@ -20,11 +20,10 @@ import {
   LogOut,
   User
 } from 'lucide-react';
-import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import LoginPage from './pages/LoginPage';
-
-const API_BASE = 'http://localhost:8000';
+import AdminPage from './pages/AdminPage';
+import api from './utils/api';
 
 interface Execution {
   run_id: string;
@@ -41,12 +40,14 @@ interface UserInfo {
   balance: number;
   total_spent: number;
   api_key: string;
+  role: string;
 }
 
 function App() {
   const { t, i18n } = useTranslation();
   const [token, setToken] = useState<string | null>(localStorage.getItem('artfish_token'));
   const [activeTab, setActiveTab] = useState('execute');
+  const [isAdminView, setIsAdminView] = useState(false);
   const [goals, setGoals] = useState('');
   const [loading, setLoading] = useState(false);
   const [executions, setExecutions] = useState<Execution[]>([]);
@@ -54,17 +55,15 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // 获取用户信息
   const fetchUserInfo = async () => {
     if (!token) return;
     try {
-      const res = await axios.get(`${API_BASE}/v1/user/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await api.get('/v1/user/me');
       setUserInfo(res.data);
     } catch (err) {
       console.error("Failed to fetch user info", err);
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
+      // @ts-ignore
+      if (err.response?.status === 401) {
         handleLogout();
       }
     }
@@ -91,12 +90,10 @@ function App() {
     if (!goals || !token) return;
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE}/v1/execute`, {
+      const res = await api.post('/v1/execute', {
         goals: goals.split(',').map(g => g.trim()),
         user_id: userInfo?.user_id || 'test_user',
         constraints: { style: 'photorealistic' }
-      }, {
-        headers: { 'Authorization': `Bearer ${token}` }
       });
       
       const runId = res.data.run_id;
@@ -117,9 +114,7 @@ function App() {
         return;
       }
       try {
-        const res = await axios.get(`${API_BASE}/v1/execution/${runId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const res = await api.get(`/v1/execution/${runId}`);
         const data = res.data;
         
         setExecutions(prev => {
@@ -141,16 +136,19 @@ function App() {
   };
 
   const downloadReport = (runId: string) => {
-    window.open(`${API_BASE}/v1/execution/${runId}/report?type=pdf&token=${token}`, '_blank');
+    window.open(`http://localhost:8000/v1/execution/${runId}/report?type=pdf&token=${token}`, '_blank');
   };
 
   if (!token) {
     return <LoginPage onLogin={handleLogin} />;
   }
 
+  if (isAdminView && userInfo?.role === 'admin') {
+    return <AdminPage token={token} onBack={() => setIsAdminView(false)} />;
+  }
+
   return (
     <div className="min-h-screen w-full flex flex-col">
-      {/* 顶部导航 */}
       <nav className="fixed top-0 w-full h-14 glass z-[100] border-b border-black/[0.08]">
         <div className="container-custom h-full flex justify-between items-center">
           <div className="flex items-center gap-8">
@@ -161,7 +159,6 @@ function App() {
               <span className="text-[17px] font-semibold tracking-tight">artfish</span>
             </div>
             
-            {/* 桌面端菜单 */}
             <div className="hidden md:flex gap-6 text-[13px] text-black/60 font-medium">
               <button 
                 onClick={() => setActiveTab('execute')} 
@@ -226,6 +223,15 @@ function App() {
                              {userInfo?.api_key}
                            </code>
                         </div>
+                        {userInfo?.role === 'admin' && (
+                          <button 
+                            onClick={() => { setIsAdminView(true); setIsProfileOpen(false); }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-apple-blue hover:bg-apple-blue/5 rounded-xl transition-colors mt-1"
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                            Admin Console
+                          </button>
+                        )}
                         <button 
                           onClick={handleLogout}
                           className="w-full flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-red-500 hover:bg-red-50 rounded-xl transition-colors"
@@ -240,7 +246,6 @@ function App() {
               </AnimatePresence>
             </div>
             
-            {/* 移动端菜单按钮 */}
             <button className="md:hidden p-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
               {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -248,7 +253,6 @@ function App() {
         </div>
       </nav>
 
-      {/* 移动端抽屉菜单 */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div 
@@ -270,7 +274,6 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* 主体内容 */}
       <main className="flex-grow pt-24 pb-20 overflow-y-auto">
         <div className="container-custom">
           <AnimatePresence mode="wait">
@@ -282,7 +285,6 @@ function App() {
                 exit={{ opacity: 0, scale: 0.98 }}
                 className="space-y-12 md:space-y-20"
               >
-                {/* 标题区域 */}
                 <div className="space-y-6 max-w-2xl">
                   <motion.h1 
                     initial={{ opacity: 0, x: -20 }}
@@ -299,7 +301,6 @@ function App() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                  {/* 输入区域 */}
                   <div className="lg:col-span-8 space-y-6">
                     <div className="card-apple p-6 md:p-8 space-y-6">
                       <div className="space-y-3">
@@ -338,7 +339,6 @@ function App() {
                     </div>
                   </div>
 
-                  {/* 状态面板 */}
                   <div className="lg:col-span-4 space-y-6">
                     <div className="card-apple p-6 space-y-6">
                       <h3 className="text-[17px] font-bold tracking-tight">System Integrity</h3>

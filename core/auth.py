@@ -4,8 +4,12 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from core.config import settings
 
-# 密码加密上下文 (使用 pbkdf2_sha256 避免 bcrypt 的环境兼容性问题)
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+# 密码加密上下文 (支持 bcrypt 12轮和 Argon2id 备选方案)
+pwd_context = CryptContext(
+    schemes=["bcrypt", "argon2"], 
+    bcrypt__rounds=12, 
+    deprecated="auto"
+)
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
