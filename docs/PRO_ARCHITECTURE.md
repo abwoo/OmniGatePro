@@ -1,8 +1,8 @@
-# Artfish Studio Pro: 高度可扩展多智能体系统架构规范
+# OmniGate Pro: 高度可扩展多智能体系统架构规范
 
 ## 1. 系统架构概述 (System Overview)
 
-Artfish Studio Pro 采用 **分布式 Agent 微服务架构**，通过中央编排网关实现多智能体协同、辩论与创作。
+OmniGate Pro 采用 **分布式 Agent 微服务架构**，通过中央编排网关实现多智能体协同、辩论与创作。
 
 ### 核心组件
 - **ProGateway (API 网关)**: 实现速率限制、熔断机制与响应缓存。

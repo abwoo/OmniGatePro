@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "artfish"
-version = "0.1.0"
-description = "模型无关的艺术创作代理运行时/执行框架"
+name = "omnigate-pro"
+version = "3.0.0"
+description = "Universal AI Agent Gateway & Clawdbot Plugin"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [

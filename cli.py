@@ -58,7 +58,7 @@ def get_git_revision_hash() -> str:
 @app.command()
 def doctor():
     """环境诊断：检查系统运行环境与 API 连通性"""
-    console.print(Panel("[bold cyan]Artfish Studio Pro System Diagnosis[/bold cyan]"))
+    console.print(Panel("[bold cyan]OmniGate Pro System Diagnosis[/bold cyan]"))
     
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Component", style="dim")

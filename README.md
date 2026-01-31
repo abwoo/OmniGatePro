@@ -1,6 +1,6 @@
 # OmniGate Pro: Clawdbot 核心增强插件与网关
 
-OmniGate Pro 是一款专为 **Clawdbot** 设计的轻量化增强插件。它能让您的 Clawdbot 具备本地执行能力，同时大幅降低 Token 消耗。
+OmniGate Pro 是一款专为 **Clawdbot** (OpenClaw) 设计的轻量化增强插件。它能让您的 Clawdbot 具备本地执行能力，同时大幅降低 Token 消耗。
 
 ---
 

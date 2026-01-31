@@ -1,4 +1,4 @@
-# Artfish Studio Pro Docker 部署配置
+# OmniGate Pro Docker 部署配置
 
 version: '3.8'
 
@@ -13,7 +13,7 @@ services:
     depends_on:
       - redis
     networks:
-      - artfish-net
+      - omnigate-net
 
   # 任务队列
   redis:
@@ -21,17 +21,8 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - artfish-net
-
-  # Agent 节点示例 (可水平扩展)
-  tutor-agent:
-    build: .
-    command: python -m core.agents.art_agents
-    environment:
-      - AGENT_ROLE=tutor
-    networks:
-      - artfish-net
+      - omnigate-net
 
 networks:
-  artfish-net:
+  omnigate-net:
     driver: bridge
