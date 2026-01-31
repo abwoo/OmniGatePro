@@ -1,105 +1,47 @@
 import asyncio
 import logging
 import uuid
-from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
-from core.persona import persona_engine
-from core.api_engine import api_engine
+from core.llm_gateway import LLMGateway
 
-logger = logging.getLogger("artfish.pro.agent")
+logger = logging.getLogger("omni.core.agent")
 
-class ArtAgent(ABC):
+class OmniAgent:
     """
-    高度可扩展的多智能体基类。
-    支持分布式调用、个性化表达与自主协作。
+    轻量化全能智能体：核心逻辑仅保留推理与记忆。
     """
-    def __init__(self, name: str, role: str, persona_type: str = "encouraging"):
+    def __init__(self, name: str, role: str):
         self.agent_id = str(uuid.uuid4())[:8]
         self.name = name
         self.role = role
-        self.persona_type = persona_type
         self.memory: List[Dict] = []
+        self.llm = LLMGateway()
 
-    @abstractmethod
-    async def process_task(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
-        """处理任务的核心逻辑"""
-        pass
-
-    async def speak(self, user_id: str, context: str, content: Any) -> str:
-        """通过个性化引擎生成发言"""
-        response = await persona_engine.generate_response(user_id, context, content, self.memory)
-        # 记录自己的发言到记忆中
-        self.memory.append({"role": "assistant", "content": response})
-        if len(self.memory) > 10: # 保持最近 10 条记忆
-            self.memory.pop(0)
-        return response
-
-class AgentOrchestrator:
-    """
-    Agent 编排系统：实现并行处理、交叉验证与协作模式。
-    """
-    def __init__(self):
-        self.agents: Dict[str, ArtAgent] = {}
-        self.task_queue = asyncio.Queue()
-
-    def register_agent(self, agent: ArtAgent):
-        self.agents[agent.name] = agent
-
-    async def run_parallel(self, task_description: str, agent_names: List[str]) -> Dict[str, Any]:
-        """并行任务处理模式"""
-        tasks = []
-        for name in agent_names:
-            if name in self.agents:
-                tasks.append(self.agents[name].process_task({"description": task_description}))
+    async def think(self, user_input: str) -> Dict[str, Any]:
+        # 极致压缩：仅传递关键上下文
+        context_summary = self._get_fast_summary()
         
-        results = await asyncio.gather(*tasks)
-        return {name: res for name, res in zip(agent_names, results)}
-
-    async def run_debate(self, topic: str, pro_agent_name: str, con_agent_name: str) -> List[str]:
-        """辩论模式：对同一任务启动正反方 Agent 进行多轮论证"""
-        pro_agent = self.agents.get(pro_agent_name)
-        con_agent = self.agents.get(con_agent_name)
+        system_prompt = (
+            f"You are {self.name}, a professional assistant for Clawdbot. "
+            "Your goal is to provide concise, expert-level support. "
+            "NEVER mention you are an AI or LLM. NEVER use polite filler like 'Certainly' or 'I understand'. "
+            "Use Markdown formatting. Focus on the local device context."
+        )
         
-        if not pro_agent or not con_agent:
-            return ["无法启动辩论：Agent 未就绪"]
-
-        dialogue = []
-        context = f"关于主题 '{topic}' 的学术辩论"
+        prompt = f"{system_prompt}\n\nUser: {user_input}\nContext: {context_summary}"
+        res = await self.llm.chat("deepseek", prompt, "system")
         
-        # 第一轮：陈述观点
-        pro_view = await pro_agent.process_task({"topic": topic, "side": "pro"})
-        dialogue.append(await pro_agent.speak("system", context, pro_view))
-        
-        con_view = await con_agent.process_task({"topic": topic, "side": "con", "opponent_view": pro_view})
-        dialogue.append(await con_agent.speak("system", context, con_view))
-        
-        return dialogue
+        # 清理 AI 痕迹
+        if res.get("status") == "success":
+            from core.persona import persona_engine
+            res["text"] = persona_engine._clean_ai_traces(res["text"])
+            
+        return res
 
-    async def run_interaction(self, topic: str, agent_names: List[str], rounds: int = 3) -> List[str]:
-        """艺术互动模式：多个 Agent 围绕主题进行多轮交互互动"""
-        if not all(name in self.agents for name in agent_names):
-            return ["无法启动互动：部分 Agent 未注册"]
+    def _get_fast_summary(self) -> str:
+        if not self.memory: return "None"
+        return self.memory[-1].get("content", "")[:100]
 
-        dialogue = []
-        context = f"关于 '{topic}' 的艺术互动工坊"
-        last_message = f"我们要讨论的主题是：{topic}"
-
-        for i in range(rounds):
-            for name in agent_names:
-                agent = self.agents[name]
-                # Agent 根据上一条消息产生新的想法
-                response_data = await agent.process_task({
-                    "topic": topic,
-                    "last_interaction": last_message,
-                    "round": i + 1
-                })
-                # 个性化发言
-                speech = await agent.speak("system", context, response_data)
-                formatted_speech = f"[{agent.name} ({agent.role})]: {speech}"
-                dialogue.append(formatted_speech)
-                last_message = speech # 更新上下文
-
-        return dialogue
-
-# 全局编排器
-orchestrator = AgentOrchestrator()
+    def add_memory(self, role: str, content: str):
+        self.memory.append({"role": role, "content": content})
+        if len(self.memory) > 5: self.memory.pop(0) # 内存中仅保留 5 条

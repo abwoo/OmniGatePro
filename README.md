@@ -1,56 +1,52 @@
-# OmniGate Pro
+# OmniGate Pro: Clawdbot 核心增强插件与网关
 
-OmniGate Pro 是一个开源、自托管的 **全能 AI 智能体网关**。它连接了大模型、即时通讯平台与本地设备，让 AI 具备在您的电脑上直接完成真实任务的能力。
-
----
-
-## 🌟 核心价值
-
-- **本地优先**: 数据存储在本地，保障隐私。
-- **消息驱动**: 通过 Telegram, Discord, Feishu 即可控制您的设备。
-- **真实执行**: 不仅能聊天，还能跑脚本、管文件、控制浏览器。
-- **Token 优化**: 专为 Clawdbot 设计的插件模式，大幅节省 Token 消耗。
+OmniGate Pro 是一款专为 **Clawdbot** 设计的轻量化增强插件。它能让您的 Clawdbot 具备本地执行能力，同时大幅降低 Token 消耗。
 
 ---
 
-## 📚 文档资源
+## 🌟 三大核心价值
 
-- [OMNIGATE_GUIDE.md (学习手册)](docs/OMNIGATE_GUIDE.md)
-- [PRO_ARCHITECTURE.md (架构规范)](docs/PRO_ARCHITECTURE.md)
-- [API_EXTENSION_GUIDE.md (API 扩展指南)](docs/API_EXTENSION_GUIDE.md)
+1.  **极致轻量化**: 专为低配置环境优化，移除冗余模块，核心运行内存占用极低。
+2.  **Clawdbot 深度集成**: 
+    - **任务卸载**: Clawdbot 可将复杂的本地脚本、文件操作卸载给 OmniGate 执行。
+    - **Token 节省**: 内置本地摘要算法，自动压缩长对话上下文，节省 50%+ Token。
+3.  **智能手机级 UX**: 像操作手机 App 一样简单，无需记忆复杂指令，支持标准化工作流。
 
 ---
 
-## 🚀 快速开始 (CLI-First)
+## 🛠️ 快速安装 (3 分钟)
 
-### 1. 环境初始化
-```bash
-# 1. 安装依赖
+```powershell
 pip install -r requirements.txt
-
-# 2. 交互式配置密钥
 python cli.py setup-keys
-
-# 3. 系统环境自检
 python cli.py doctor
 ```
 
-### 2. 功能演示
-验证 OmniGate 的本地执行与协作能力：
-```bash
-python demo_omni_pro.py
+---
+
+## 📱 极简操作手册
+
+### 1. 本地执行
+在 Telegram 或终端中直接发送：
+- `RUN: ls -R` (执行系统命令)
+- `读取 config.py` (操作本地文件)
+
+### 2. 作为 Clawdbot 插件
+在 Clawdbot 的 `config.json` 中添加指针：
+```json
+{
+  "plugins": {
+    "omni": "omni.offload",
+    "token_optimizer": "omni.shrink"
+  }
+}
 ```
 
 ---
 
-## 📅 更新日志
-
-- **v3.0.0 (当前)**: 
-    - 品牌升级为 **OmniGate Pro**，定位全能 AI 智能体网关。
-    - 新增本地执行技能 (System, File Skills)。
-    - 新增 **Clawdbot 插件适配器**，支持任务卸载与 Token 优化。
-    - 实现基于 YAML 的 **标准化工作流系统**。
-- **v2.2.0**: 引入多 Agent 辩论与协同架构。
+## 🔗 资源链接
+- [OMNIGATE_GUIDE.md (详细教程)](docs/OMNIGATE_GUIDE.md)
+- [PRO_ARCHITECTURE.md (架构说明)](docs/PRO_ARCHITECTURE.md)
 
 ---
-**OmniGate Pro - 让大模型具备真实行动力**
+**OmniGate Pro - 让您的 AI 助手更轻、更快、更省。**

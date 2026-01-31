@@ -1,147 +1,57 @@
 import logging
 import asyncio
-import json
 import sys
 import os
-from typing import Optional, Dict, Any
-
-# 将项目根目录添加到路径中，确保可以找到 core 和 skills 模块
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
-from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    MessageHandler,
-    ContextTypes,
-    CallbackQueryHandler,
-    filters,
-)
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 from core.config import settings
-from core.gateway_pro import pro_gateway
-from core.orchestrator_pro import discussion_room, multimodal_creator
-from core.agent import orchestrator
-from skills.utility_skills import UtilitySkills
+from core.omni_engine import omni_engine
 
 # Setup logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger("artfish.studio.bot")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("omni.bot")
 
-class ArtfishStudioBot:
+class OmniBot:
     """
-    Artfish Studio Pro Telegram Bot: 高度可扩展的多 Agent 智能系统
+    OmniGate 极简版 Bot：智能手机级交互体验。
     """
     def __init__(self, token: str):
-        self.token = token
-        self.utility = UtilitySkills()
-        self.app = ApplicationBuilder().token(self.token).build()
+        self.app = ApplicationBuilder().token(token).build()
         self._setup_handlers()
 
     def _setup_handlers(self):
-        """配置指令与消息处理器"""
-        self.app.add_handler(CommandHandler("start", self.start_command))
-        self.app.add_handler(CommandHandler("collab", self.collab_command))
-        self.app.add_handler(CommandHandler("debate", self.debate_command))
-        self.app.add_handler(CommandHandler("interact", self.interact_command))
-        self.app.add_handler(CommandHandler("monitor", self.monitor_command))
-        
-        # 兼容旧指令作为快捷方式 (艺术相关)
-        self.app.add_handler(CommandHandler("tutor", self.collab_command))
-        self.app.add_handler(CommandHandler("critique", self.collab_command))
-        
-        # 处理普通文本消息
-        self.app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), self.handle_message))
+        self.app.add_handler(CommandHandler("start", self.start))
+        self.app.add_handler(CommandHandler("menu", self.start))
+        self.app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), self.handle))
 
     async def post_init(self, application):
-        """启动后的初始化：更新机器人指令菜单 (仅保留艺术相关)"""
-        commands = [
-            BotCommand("start", "开始使用"),
-            BotCommand("collab", "多 Agent 协同创作"),
-            BotCommand("debate", "启动专家辩论"),
-            BotCommand("interact", "Agent 互动工坊"),
-            BotCommand("monitor", "系统监控"),
-        ]
-        await application.bot.set_my_commands(commands)
-        logger.info("✅ 机器人指令菜单已更新 (已移除天气查询)")
+        await application.bot.set_my_commands([
+            BotCommand("start", "主菜单"),
+            BotCommand("menu", "快捷功能")
+        ])
 
-    async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        welcome_msg = (
-            "🎨 *Artfish Studio Pro 已上线*\n\n"
-            "欢迎来到专业的艺术智能协作空间。这里汇集了顶尖的 AI 艺术专家，为您提供全方位的创作支持：\n\n"
-            "🌟 *核心艺术指令*：\n"
-            "- /collab <灵感>: 启动多 Agent 协同创作流，从构思到评审一气呵成。\n"
-            "- /debate <主题>: 启动专家 Agent 间的学术辩论，深度挖掘艺术命题。\n"
-            "- /interact <主题>: 启动 Agent 间的艺术互动工坊，捕捉灵感火花。\n"
-            "- /monitor: 实时监控系统运行状态。\n\n"
-            "直接发送您的艺术构想，即可开启智能导师辅导。"
+    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        menu = (
+            "📱 *OmniGate Pro - Clawdbot 增强插件*\n\n"
+            "极简操作指令：\n"
+            "- 直接发送任务 (如: `读取当前目录`)\n"
+            "- 发送 `RUN: <命令>` 执行本地指令\n"
+            "- 系统会自动为 Clawdbot 优化 Token"
         )
-        await update.message.reply_text(welcome_msg, parse_mode='Markdown')
+        await update.message.reply_text(menu, parse_mode='Markdown')
 
-    async def interact_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        topic = " ".join(context.args)
-        if not topic:
-            await update.message.reply_text("💡 请输入互动讨论的主题。")
-            return
-            
+    async def handle(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_input = update.message.text
         await update.message.reply_chat_action("typing")
-        dialogue = await orchestrator.run_interaction(topic, ["tutor", "artist"], rounds=2)
-        content = "\n\n".join(dialogue)
-        await update.message.reply_text(f"🎭 *Agent 艺术互动记录：*\n\n{content}")
-
-    async def debate_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        topic = " ".join(context.args)
-        if not topic:
-            await update.message.reply_text("💡 请输入辩论主题。")
-            return
         
-        await update.message.reply_chat_action("typing")
-        res = await pro_gateway.handle_request(str(update.effective_user.id), "debate", {"topic": topic})
-        
-        if res["status"] == "success":
-            content = "\n\n---\n\n".join(res["data"])
-            await update.message.reply_text(f"⚖️ *专家辩论结果：*\n\n{content}", parse_mode='Markdown')
-
-    async def collab_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        prompt = " ".join(context.args)
-        if not prompt:
-            await update.message.reply_text("💡 请输入创作灵感。")
-            return
-            
-        await update.message.reply_chat_action("typing")
-        dialogue = await discussion_room.start_session(str(update.effective_user.id), prompt)
-        await update.message.reply_text(f"🤝 *多 Agent 协作讨论记录：*\n\n{dialogue}")
-
-    async def monitor_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        data = pro_gateway.get_dashboard_data()
-        msg = (
-            "📊 *系统实时监控仪表盘*\n\n"
-            f"• 总请求数: {data['requests_per_minute']}\n"
-            f"• 平均延迟: {data['avg_latency_ms']}ms\n"
-            f"• 错误率: {data['error_rate']}\n"
-            f"• 熔断器状态: {data['circuit_breaker']}\n"
-            f"• 活跃 Agent: {', '.join(data['active_agents'])}"
-        )
-        await update.message.reply_text(msg, parse_mode='Markdown')
-
-    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        # 默认触发讨论室
-        await self.collab_command(update, context)
+        # 调用核心引擎执行
+        res = await omni_engine.execute_task(user_input)
+        await update.message.reply_text(f"✅ *执行结果:*\n\n{res}", parse_mode='Markdown')
 
     def run(self):
-        """启动机器人"""
-        logger.info("Artfish Studio Bot is starting...")
-        self.app.post_init = self.post_init # 注册初始化回调
+        self.app.post_init = self.post_init
         self.app.run_polling()
 
 if __name__ == "__main__":
-    # 优先从配置类读取 Token
     TOKEN = settings.TELEGRAM_BOT_TOKEN or "8434211814:AAFUTWoELMEIio7O8zkKo9siFp233MUQt2A"
-    
-    if not TOKEN or TOKEN.startswith("YOUR_"):
-        logger.error("❌ 未检测到有效的 TELEGRAM_BOT_TOKEN。请在 .env 文件中配置或设置环境变量。")
-    else:
-        bot = ArtfishStudioBot(TOKEN)
-        bot.run()
+    OmniBot(TOKEN).run()
