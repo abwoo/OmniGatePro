@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: artfish
+      POSTGRES_PASSWORD: artfish_password
+      POSTGRES_DB: artfish_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    command: python -m api.main
+    environment:
+      DATABASE_URL: postgresql://artfish:artfish_password@db:5432/artfish_db
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  worker:
+    build: .
+    command: celery -A core.worker worker --loglevel=info
+    environment:
+      DATABASE_URL: postgresql://artfish:artfish_password@db:5432/artfish_db
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  postgres_data:
