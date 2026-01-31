@@ -13,11 +13,12 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Settings
 } from 'lucide-react';
 import { validatePasswordStrength, getPasswordStrengthScore, sanitizeInput } from '../utils/security';
 import SliderCaptcha from '../components/SliderCaptcha';
-import api from '../utils/api';
+import api, { setApiUrl } from '../utils/api';
 
 interface LoginPageProps {
   onLogin: (token: string) => void;
@@ -33,6 +34,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<{ label: string; met: boolean }[]>([]);
   const [strengthScore, setStrengthScore] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
+  const [tempApiUrl, setTempApiUrl] = useState(localStorage.getItem('artfish_api_url') || 'http://localhost:8000');
 
   useEffect(() => {
     if (!isLogin) {
@@ -45,12 +48,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!captchaVerified) {
-      setError('Please slide to verify');
+      setError('Please slide to verify your identity');
       return;
     }
 
     if (!isLogin && strengthScore < 100) {
-      setError('Security requirements not met');
+      setError('Password security requirements not met');
       return;
     }
 
@@ -77,9 +80,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         onLogin(res.data.access_token);
       }
     } catch (err: any) {
-      console.error("Login/Register error:", err);
-      const detail = err.response?.data?.detail;
-      setError(typeof detail === 'string' ? detail : 'Authentication failed. Please check your credentials.');
+      console.error("Auth error:", err);
+      if (!err.response) {
+        setError('Cannot reach server. Is the backend running?');
+      } else {
+        setError(err.response?.data?.detail || 'Authentication failed. Please check your credentials.');
+      }
       setCaptchaVerified(false);
     } finally {
       setLoading(false);
@@ -87,91 +93,87 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#fbfbfd] p-6">
-      {/* Background Glow */}
-      <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-apple-blue/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[120px]" />
+    <div className="min-h-screen flex items-center justify-center bg-[#fbfbfd] p-6 relative overflow-hidden">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-apple-blue/5 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-500/5 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       <motion.div 
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[400px]"
+        className="w-full max-w-[420px] z-10"
       >
         <div className="text-center mb-10">
           <motion.div 
-            whileHover={{ scale: 1.05 }}
-            className="inline-flex w-16 h-16 bg-black rounded-2xl items-center justify-center shadow-2xl mb-6"
+            whileHover={{ scale: 1.05, rotate: 5 }}
+            className="inline-flex w-16 h-16 bg-black rounded-2xl items-center justify-center shadow-2xl mb-6 cursor-pointer"
           >
             <Sparkles className="text-white w-9 h-9" />
           </motion.div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">
-            {isLogin ? 'Welcome Back' : 'Get Started'}
+          <h1 className="text-3xl font-bold tracking-tight text-apple-dark mb-2">
+            {isLogin ? 'Welcome Back' : 'Create Account'}
           </h1>
           <p className="text-[15px] font-medium text-black/40">
-            Secure access to artfish runtime v0.1.0
+            Artfish Runtime v0.1.0 • Enterprise Ready
           </p>
         </div>
 
-        <div className="card-apple p-8 md:p-10">
+        <div className="card-apple p-8 md:p-10 relative bg-white/80 backdrop-blur-xl">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
+            {/* Email Field - New Flex Layout */}
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest ml-1">
-                Email Address
+                Identity
               </label>
-              <div className="relative h-12">
-                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                  <Mail className="w-4 h-4 text-black/20" />
-                </div>
+              <div className="flex items-center bg-apple-gray rounded-xl h-12 px-4 focus-within:bg-white focus-within:ring-2 focus-within:ring-apple-blue/10 transition-all border border-transparent focus-within:border-apple-blue/20">
+                <Mail className="w-4 h-4 text-black/20 shrink-0" />
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.com"
+                  placeholder="name@example.com"
                   required
-                  className="w-full h-full bg-apple-gray border-none rounded-xl pl-11 pr-4 text-[15px] font-medium outline-none focus:bg-white focus:ring-1 focus:ring-apple-blue/20 transition-all"
+                  className="flex-grow bg-transparent border-none outline-none ml-3 text-[15px] font-medium text-apple-dark placeholder:text-black/20"
                 />
               </div>
             </div>
 
-            {/* Password Field */}
+            {/* Password Field - New Flex Layout */}
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1">
                 <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest">
-                  Password
+                  Security Key
                 </label>
                 {isLogin && (
-                  <button type="button" className="text-[11px] font-bold text-apple-blue">
-                    Reset
+                  <button type="button" className="text-[11px] font-bold text-apple-blue hover:opacity-70 transition-opacity">
+                    Lost access?
                   </button>
                 )}
               </div>
-              <div className="relative h-12">
-                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                  <Lock className="w-4 h-4 text-black/20" />
-                </div>
+              <div className="flex items-center bg-apple-gray rounded-xl h-12 px-4 focus-within:bg-white focus-within:ring-2 focus-within:ring-apple-blue/10 transition-all border border-transparent focus-within:border-apple-blue/20">
+                <Lock className="w-4 h-4 text-black/20 shrink-0" />
                 <input 
                   type={showPassword ? "text" : "password"} 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
                   required
-                  className="w-full h-full bg-apple-gray border-none rounded-xl pl-11 pr-12 text-[15px] font-medium outline-none focus:bg-white focus:ring-1 focus:ring-apple-blue/20 transition-all"
+                  className="flex-grow bg-transparent border-none outline-none ml-3 text-[15px] font-medium text-apple-dark placeholder:text-black/20"
                 />
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-4 flex items-center text-black/20 hover:text-black/40 transition-colors"
+                  className="text-black/20 hover:text-black/40 transition-colors ml-2"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
 
-              {/* Strength UI */}
+              {/* Password Strength */}
               {!isLogin && password.length > 0 && (
-                <div className="pt-2 space-y-3">
+                <div className="pt-2 space-y-3 px-1">
                   <div className="h-1 w-full bg-apple-gray rounded-full overflow-hidden">
                     <motion.div 
                       className={`h-full transition-colors ${
@@ -185,14 +187,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <div className="grid grid-cols-2 gap-2">
                     {passwordStrength.map((req, i) => (
                       <div key={i} className="flex items-center gap-2">
-                        {req.met ? (
-                          <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0" />
-                        ) : (
-                          <XCircle className="w-3 h-3 text-black/10 shrink-0" />
-                        )}
-                        <span className={`text-[10px] font-bold ${req.met ? 'text-black/60' : 'text-black/30'}`}>
-                          {req.label}
-                        </span>
+                        {req.met ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : <XCircle className="w-3 h-3 text-black/10" />}
+                        <span className={`text-[10px] font-bold ${req.met ? 'text-black/60' : 'text-black/30'}`}>{req.label}</span>
                       </div>
                     ))}
                   </div>
@@ -200,15 +196,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               )}
             </div>
 
-            {/* Captcha Section */}
+            {/* Captcha */}
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest ml-1">
-                Bot Protection
+                Human Verification
               </label>
               <SliderCaptcha onSuccess={() => setCaptchaVerified(true)} />
             </div>
 
-            {/* Error UI */}
+            {/* Error Message */}
             <AnimatePresence>
               {error && (
                 <motion.div 
@@ -218,7 +214,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   className="flex items-center gap-3 p-4 bg-red-50 rounded-xl text-red-600 border border-red-100"
                 >
                   <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span className="text-xs font-bold leading-tight">{error}</span>
+                  <span className="text-[12px] font-bold leading-tight">{error}</span>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -226,53 +222,76 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <button 
               type="submit"
               disabled={loading || (!isLogin && strengthScore < 100) || !captchaVerified}
-              className="w-full h-12 btn-primary relative overflow-hidden flex items-center justify-center gap-2"
+              className="w-full h-12 btn-primary flex items-center justify-center gap-2 group relative overflow-hidden shadow-lg shadow-apple-blue/20 active:scale-[0.98] transition-all"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
                   <span className="font-bold text-[15px]">{isLogin ? 'Sign In' : 'Create Account'}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-8 pt-8 border-t border-black/[0.04] space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+          {/* Settings / API URL toggle */}
+          <div className="mt-8 pt-6 border-t border-black/[0.04] space-y-4">
+            <div className="flex justify-center gap-4">
               <button 
-                onClick={() => setError('OAuth available in Pro plan')}
-                className="h-12 bg-white border border-apple-border rounded-xl flex items-center justify-center gap-3 hover:bg-apple-gray transition-all active:scale-[0.98]"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError('');
+                  setCaptchaVerified(false);
+                }}
+                className="text-[13px] font-bold text-apple-blue hover:opacity-70"
               >
-                <Chrome className="w-4 h-4 text-black/60" />
-                <span className="text-[13px] font-bold text-black/70">Google</span>
+                {isLogin ? "Join artfish" : "Have an account?"}
               </button>
+              <span className="text-black/10">|</span>
               <button 
-                onClick={() => setError('OAuth available in Pro plan')}
-                className="h-12 bg-white border border-apple-border rounded-xl flex items-center justify-center gap-3 hover:bg-apple-gray transition-all active:scale-[0.98]"
+                onClick={() => setShowSettings(!showSettings)}
+                className="text-[13px] font-bold text-black/30 hover:text-black/60 flex items-center gap-1"
               >
-                <Github className="w-4 h-4 text-black/60" />
-                <span className="text-[13px] font-bold text-black/70">GitHub</span>
+                <Settings className="w-3.5 h-3.5" />
+                API Config
               </button>
             </div>
 
-            <button 
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
-                setCaptchaVerified(false);
-              }}
-              className="w-full text-[13px] font-bold text-apple-blue"
-            >
-              {isLogin ? "Create an account" : "Sign in to existing account"}
-            </button>
+            {showSettings && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-3 pt-2"
+              >
+                <div className="bg-apple-gray p-3 rounded-xl space-y-2">
+                  <p className="text-[10px] font-black text-black/30 uppercase tracking-widest">Target Backend URL</p>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={tempApiUrl}
+                      onChange={(e) => setTempApiUrl(e.target.value)}
+                      className="flex-grow bg-white border border-black/5 rounded-lg px-3 py-1.5 text-xs font-mono"
+                    />
+                    <button 
+                      onClick={() => setApiUrl(tempApiUrl)}
+                      className="bg-black text-white text-[10px] font-bold px-3 py-1.5 rounded-lg"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  <p className="text-[9px] text-black/20 font-medium">Changing this will reload the page.</p>
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
 
-        <div className="mt-8 text-center flex items-center justify-center gap-2 text-[11px] font-bold text-black/20 uppercase tracking-[0.1em]">
-          <ShieldCheck className="w-4 h-4" />
-          SOC2 Type II & GDPR Compliant
+        <div className="mt-10 text-center flex flex-col items-center gap-4">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-black/20 uppercase tracking-[0.2em]">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            SOC2 Type II • ISO 27001
+          </div>
         </div>
       </motion.div>
     </div>
