@@ -165,6 +165,10 @@ function App() {
 
   return (
     <div className="min-h-screen w-full flex flex-col bg-gray-50/50">
+      {/* Version Debug Tag - To ensure user sees the update */}
+      <div className="fixed bottom-4 right-4 z-[999] bg-black/80 text-white text-[10px] px-2 py-1 rounded-md pointer-events-none font-mono">
+        v2.0.1-frictionless
+      </div>
       {/* Navigation */}
       <nav className="fixed top-0 w-full h-16 bg-white/80 backdrop-blur-xl z-[100] border-b border-gray-200/60">
         <div className="max-w-6xl mx-auto h-full px-4 md:px-6 flex justify-between items-center">
