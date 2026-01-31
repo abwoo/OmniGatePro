@@ -32,12 +32,24 @@ $env:PYTHONPATH = "."; python demo_omni_pro.py
 
 ---
 
-## 📱 极简操作流程 (Smartphone UX)
+## 📱 智能手机级交互 (Low Learning Cost)
 
-OmniGate 引入了 **标准化工作流 (Workflows)**，通过简单的 YAML 配置即可实现复杂的自动化：
+OmniGate 追求极致的低学习门槛。即使在终端操作，我们也遵循“标准化菜单”逻辑：
 
-1.  **定义工作流**: 在 `core/workflows/` 下创建一个 `.yaml` 文件。
-2.  **一键执行**: 通过消息发送 `/run 工作流名称` 即可。
+1.  **启动机器人后**，点击菜单或输入 `/start`。
+2.  **常用动作一键触发**：
+    - 直接输入需求（如“查一下当前的磁盘空间”），Agent 会自动将其转换为 `RUN: df -h` 并执行。
+    - 无需记忆复杂的 API 参数，系统会自动通过“指针”进行分发。
+
+---
+
+## 🏗️ 核心逻辑：Clawdbot 的“手”与“加速器”
+
+OmniGate 的底层逻辑是 **Clawdbot 的本地扩展层**：
+- **云端 (Clawdbot)**: 负责复杂的策略决策与高层逻辑。
+- **本地 (OmniGate)**: 负责具体的执行（Shell, File）与数据压缩（Token Saver）。
+
+这种架构确保了即使在 **512MB 内存** 的设备上，Clawdbot 也能通过 OmniGate 实现高效的本地任务处理。
 
 ---
 
