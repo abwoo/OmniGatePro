@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any
 from core.config import settings
 from core.network import NetworkClient
 
-logger = logging.getLogger("artfish.core.llm_gateway")
+logger = logging.getLogger("omni.core.llm_gateway")
 
 class LLMGateway:
     """

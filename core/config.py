@@ -4,8 +4,10 @@ import os
 
 class Settings(BaseSettings):
     # Basic Config
-    APP_NAME: str = "artfish-studio"
-    DEBUG: bool = True
+    ENV: str = "prod"
+    DEBUG: bool = False
+    APP_NAME: str = "OmniGate Pro"
+    API_V1_STR: str = "/api/v1"
     VERSION: str = "2.0.0"
     
     # Database Config
