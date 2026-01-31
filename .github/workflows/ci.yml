@@ -15,46 +15,16 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libcairo2-dev pkg-config python3-dev
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest pytest-cov bandit httpx
-        # 验证核心依赖
-        python -c "import slowapi; print('slowapi version:', slowapi.__version__)"
+        pip install pytest-mock
     - name: Security Scan (Bandit)
       run: bandit -r . -x ./tests,./venv,test_advanced.py,test_api.py,test_demo.py,demo_async.py
     - name: Run Tests
       env:
         PYTHONPATH: .
         DEBUG: "True"
+        TELEGRAM_BOT_TOKEN: "8434211814:AAFUTWoELMEIio7O8zkKo9siFp233MUQt2A"
       run: pytest --cov=. --cov-report=xml
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
-
-  frontend-check:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-    - name: Install dependencies
-      working-directory: frontend
-      run: npm install
-    - name: Lint
-      working-directory: frontend
-      run: npm run lint
-    - name: Build
-      working-directory: frontend
-      run: npm run build

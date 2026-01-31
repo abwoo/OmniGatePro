@@ -102,12 +102,17 @@ class ArtfishStudioBot:
         await self._execute_art_task(update, "art_tutor", "get_theory", concept=text)
 
     async def _execute_art_task(self, update: Update, skill: str, tool: str, **kwargs):
-        """执行艺术任务并反馈"""
+        """执行艺术任务并反馈（非阻塞异步执行）"""
         try:
             await update.message.reply_chat_action("typing")
             
-            # 直接通过 Gateway 的 SkillManager 执行（多 Agent 协作的基础）
-            result = self.gateway.skill_manager.execute(skill, tool, **kwargs)
+            # 使用 asyncio.to_thread 防止同步执行阻塞事件循环
+            result = await asyncio.to_thread(
+                self.gateway.skill_manager.execute, 
+                skill, 
+                tool, 
+                **kwargs
+            )
             
             # 格式化回复
             response = self._format_studio_response(skill, tool, result)
@@ -137,7 +142,11 @@ class ArtfishStudioBot:
         self.app.run_polling()
 
 if __name__ == "__main__":
-    # 使用提供的 Token
-    TOKEN = "8434211814:AAFUTWoELMEIio7O8zkKo9siFp233MUQt2A"
-    bot = ArtfishStudioBot(TOKEN)
-    bot.run()
+    # 优先从配置类读取 Token
+    TOKEN = settings.TELEGRAM_BOT_TOKEN or "8434211814:AAFUTWoELMEIio7O8zkKo9siFp233MUQt2A"
+    
+    if not TOKEN or TOKEN.startswith("YOUR_"):
+        logger.error("❌ 未检测到有效的 TELEGRAM_BOT_TOKEN。请在 .env 文件中配置或设置环境变量。")
+    else:
+        bot = ArtfishStudioBot(TOKEN)
+        bot.run()
