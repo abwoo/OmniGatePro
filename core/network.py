@@ -13,6 +13,14 @@ class NetworkClient:
     def __init__(self, timeout: float = 10.0, max_retries: int = 3):
         self.timeout = timeout
         self.max_retries = max_retries
+        self._client = None
+
+    @property
+    def client(self) -> httpx.AsyncClient:
+        """延迟加载 httpx 客户端"""
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(timeout=self.timeout, follow_redirects=True)
+        return self._client
 
     @retry(
         stop=stop_after_attempt(3),

@@ -1,78 +1,56 @@
-# Artfish Studio Pro
+# OmniGate Pro
 
-Artfish Studio Pro 是一个高度可扩展的 艺术教育多智能体 (Multi-Agent) 协作平台。它不仅支持多种第三方接口（Telegram, Feishu, Discord），更核心的是其强大的 指针式 API 引擎 与 专家 Agent 协作体系。
+OmniGate Pro 是一个开源、自托管的 **全能 AI 智能体网关**。它连接了大模型、即时通讯平台与本地设备，让 AI 具备在您的电脑上直接完成真实任务的能力。
 
 ---
 
-## 文档资源
+## 🌟 核心价值
 
-- [LEARNING_GUIDE.md (学习手册)](docs/LEARNING_GUIDE.md)
+- **本地优先**: 数据存储在本地，保障隐私。
+- **消息驱动**: 通过 Telegram, Discord, Feishu 即可控制您的设备。
+- **真实执行**: 不仅能聊天，还能跑脚本、管文件、控制浏览器。
+- **Token 优化**: 专为 Clawdbot 设计的插件模式，大幅节省 Token 消耗。
+
+---
+
+## 📚 文档资源
+
+- [OMNIGATE_GUIDE.md (学习手册)](docs/OMNIGATE_GUIDE.md)
 - [PRO_ARCHITECTURE.md (架构规范)](docs/PRO_ARCHITECTURE.md)
 - [API_EXTENSION_GUIDE.md (API 扩展指南)](docs/API_EXTENSION_GUIDE.md)
 
 ---
 
-## 快速开始 (CLI-First)
-
-我们建议先在本地终端完成初始化与验证，确保核心引擎稳健运行。
+## 🚀 快速开始 (CLI-First)
 
 ### 1. 环境初始化
 ```bash
 # 1. 安装依赖
 pip install -r requirements.txt
 
-# 2. 交互式配置 API 密钥 (OpenAI, DeepSeek, Telegram 等)
+# 2. 交互式配置密钥
 python cli.py setup-keys
 
 # 3. 系统环境自检
 python cli.py doctor
 ```
 
-### 2. 本地引擎验证 (Pointer Engine)
-验证基于字符串指针的动态调用机制：
+### 2. 功能演示
+验证 OmniGate 的本地执行与协作能力：
 ```bash
-python demo_api_engine.py
-```
-
-### 3. 多 Agent 协作演示
-在不依赖任何第三方平台的情况下，直接在控制台体验专家 Agent 的辩论与协同：
-```bash
-python demo_art_pro.py
+python demo_omni_pro.py
 ```
 
 ---
 
-## 核心架构特性
+## 📅 更新日志
 
-- 指针式 API 引擎 (Pointer-based Engine): 借鉴成熟架构，支持通过 telegram.sendMessage 或 feishu.send_text 这种统一的字符串指针调用异构服务。
-- 专家 Agent 协作体系: 
-    - Tutor (导师): 负责艺术理论与知识引导。
-    - Artist (艺术家): 负责创意实现与视觉提示词。
-    - Critic (评审): 负责审美把关与学术辩论。
-- 个性化表达引擎 (Persona Engine): Agent 不再是死板的回复模板，而是具有动态性格（如“耐心”、“毒舌”、“诗意”）的创意伙伴。
-- 分布式任务队列: 基于 Redis 支持高并发、可重试的任务处理流。
-
----
-
-## 扩展指南
-
-如果您想接入新的平台（如微信、钉钉）：
-1. 在 core/adapters/ 继承 BaseAdapter 实现新适配器。
-2. 在 APIEngine 中注册。
-3. 即可通过指针 myplatform.method 全局调用。
-
-详情请参阅 [API_EXTENSION_GUIDE.md](docs/API_EXTENSION_GUIDE.md)。
+- **v3.0.0 (当前)**: 
+    - 品牌升级为 **OmniGate Pro**，定位全能 AI 智能体网关。
+    - 新增本地执行技能 (System, File Skills)。
+    - 新增 **Clawdbot 插件适配器**，支持任务卸载与 Token 优化。
+    - 实现基于 YAML 的 **标准化工作流系统**。
+- **v2.2.0**: 引入多 Agent 辩论与协同架构。
 
 ---
-
-## 更新日志
-
-- v2.2.0 (当前): 
-    - 引入 Artfish Studio Pro 架构，支持多 Agent 辩论与协同。
-    - 实现 Universal API Engine，支持指针式跨平台调用。
-    - 新增飞书 (Feishu) 与 Discord 适配器。
-    - 强化 CLI 工具，支持环境诊断 (doctor) 与密钥向导。
-- v2.1.0: 引入统一 LLM 网关与 5 大艺术专业技能。
-
----
-**Artfish Studio Pro - 重新定义 AI 艺术协作**
+**OmniGate Pro - 让大模型具备真实行动力**

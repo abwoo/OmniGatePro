@@ -18,10 +18,12 @@ class APIEngine:
         """初始化并注册标准适配器"""
         from core.adapters import TelegramAdapter, DiscordAdapter, SlackAdapter
         from core.adapters.feishu_adapter import FeishuAdapter
+        from core.adapters.clawdbot_adapter import ClawdbotAdapter
         self.register_adapter(TelegramAdapter())
         self.register_adapter(DiscordAdapter())
         self.register_adapter(SlackAdapter())
         self.register_adapter(FeishuAdapter())
+        self.register_adapter(ClawdbotAdapter())
 
     def register_adapter(self, adapter: BaseAdapter):
         """注册新的 API 适配器"""

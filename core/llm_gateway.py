@@ -38,8 +38,11 @@ class LLMGateway:
         start_time = time.time()
         
         try:
-            # 这里简化实现，仅模拟各厂商请求逻辑
-            # 实际生产中应使用各厂商 SDK 或标准化 HTTP 调用
+            # 优先调用真实的 DeepSeek API
+            if provider == "deepseek":
+                return await self._call_deepseek_api(prompt, model)
+            
+            # 兜底：模拟各厂商请求逻辑
             response_text = await self._mock_llm_call(provider, prompt, model)
             
             duration_ms = (time.time() - start_time) * 1000
@@ -56,6 +59,40 @@ class LLMGateway:
         except Exception as e:
             logger.error(f"LLM Call failed for {provider}: {e}")
             return {"error": str(e), "status": "fail"}
+
+    async def _call_deepseek_api(self, prompt: str, model: Optional[str] = None) -> Dict[str, Any]:
+        """真实调用 DeepSeek API"""
+        api_key = self.providers["deepseek"]["key"]
+        base_url = self.providers["deepseek"]["base_url"]
+        
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": model or "deepseek-chat",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.7,
+            "max_tokens": 1024
+        }
+        
+        try:
+            async with self.network.client as client:
+                response = await client.post(f"{base_url}/chat/completions", json=payload, headers=headers)
+                data = response.json()
+                
+                if response.status_code == 200:
+                    text = data["choices"][0]["message"]["content"]
+                    return {
+                        "provider": "deepseek",
+                        "text": text,
+                        "status": "success"
+                    }
+                else:
+                    return {"error": f"DeepSeek API Error: {data.get('error', {}).get('message', 'Unknown error')}", "status": "fail"}
+        except Exception as e:
+            return {"error": f"Network Error: {str(e)}", "status": "fail"}
 
     async def _mock_llm_call(self, provider: str, prompt: str, model: Optional[str]) -> str:
         """模拟不同厂商的 LLM 调用结果"""
