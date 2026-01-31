@@ -1,4 +1,4 @@
-# Artfish Studio 
+# Artfish Studio 🎨 🦞
 
 Artfish Studio 是一个专为 **艺术教育垂直领域** 设计的多智能体协作平台。它采用“网关 + 艺术技能 + 多智能体协作”架构，旨在为艺术教学、创意表达和艺术创作提供专业的 AI 工具集。
 
@@ -10,8 +10,33 @@ Artfish Studio 是一个专为 **艺术教育垂直领域** 设计的多智能�
 - [🧩 艺术技能系统 (ArtSkills)](#-艺术技能系统-artskills)
 - [🤖 Telegram 协作机器人](#-telegram-协作机器人)
 - [🤝 多智能体协作 (Multi-Agent)](#-多智能体协作-multi-agent)
-- [�️ 开发者控制台 (CLI)](#-开发者控制台-cli)
-- [� 艺术插件集成 (MCP)](#-艺术插件集成-mcp)
+- [️ 开发者控制台 (CLI)](#-开发者控制台-cli)
+- [🔌 艺术插件集成 (MCP)](#-艺术插件集成-mcp)
+- [🛠️ 扩展功能 (Extended Features)](#-扩展功能-extended-features)
+
+---
+
+## 🛠️ 扩展功能 (Extended Features)
+
+### 1. 实用技能包 (Utility Skills)
+系统内置了 5+ 实用指令，支持完整错误处理：
+- `/weather <城市>`: 获取实时天气报告。
+- `/exchange <金额> <源币种> <目标币种>`: 实时汇率转换。
+- `/remind <秒> <任务>`: 设置智能提醒。
+- `/translate <内容>`: 多语言翻译。
+- `/browse <URL>`: 网页抓取与内容总结。
+
+### 2. 统一 AI API 接入层
+支持通过 `/api` 指令调用主流模型，具备限流与负载均衡：
+- **模型支持**: OpenAI, Claude, Gemini, 文心一言, 通义千问。
+- **用法**: `/api <模型名> <内容>` (示例：`/api claude 帮我分析这段色彩搭配`)。
+- **特性**: 动态密钥管理、请求限流（20次/分）、响应标准化、使用统计。
+
+### 3. 用户自定义框架
+支持通过 `custom_commands.yaml` 或在线指令扩展功能：
+- **添加指令**: `/add_cmd hello 你好 {1}，欢迎来到 {args}！`
+- **调用指令**: `/hello Alice Artfish`
+- **安全沙箱**: 严格限制变量替换，防止模板注入风险。
 
 ---
 

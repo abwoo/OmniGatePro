@@ -14,6 +14,17 @@ class Settings(BaseSettings):
     # Telegram Config
     TELEGRAM_BOT_TOKEN: Optional[str] = os.getenv("TELEGRAM_BOT_TOKEN")
     
+    # External APIs
+    OPENWEATHER_API_KEY: Optional[str] = os.getenv("OPENWEATHER_API_KEY")
+    EXCHANGERATE_API_KEY: Optional[str] = os.getenv("EXCHANGERATE_API_KEY")
+    
+    # LLM API Keys
+    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
+    CLAUDE_API_KEY: Optional[str] = os.getenv("CLAUDE_API_KEY")
+    GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+    WENXIN_API_KEY: Optional[str] = os.getenv("WENXIN_API_KEY")
+    QWEN_API_KEY: Optional[str] = os.getenv("QWEN_API_KEY")
+    
     # Execution Config
     # Set to True to run tasks synchronously without Redis (Recommended for local dev)
     FORCE_SYNC_EXECUTION: bool = True 
