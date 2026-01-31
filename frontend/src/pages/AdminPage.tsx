@@ -4,6 +4,7 @@ import {
   BarChart3, 
   Search, 
   Download, 
+  CreditCard,
   UserX, 
   UserCheck, 
   Trash2, 
@@ -70,6 +71,8 @@ const AdminPage: React.FC<AdminPageProps> = ({ token, onBack }) => {
     }
   };
 
+  const totalSystemRevenue = users.reduce((acc, user) => acc + user.balance, 0);
+
   useEffect(() => {
     setLoading(true);
     Promise.all([fetchUsers(), fetchStats()]).finally(() => setLoading(false));
@@ -85,6 +88,25 @@ const AdminPage: React.FC<AdminPageProps> = ({ token, onBack }) => {
       fetchUsers();
     } catch (err) {
       alert("Failed to update user status");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleManualRecharge = async (userId: string) => {
+    const amount = prompt("Enter amount to recharge (USD):", "10");
+    if (!amount || isNaN(parseFloat(amount))) return;
+    
+    setActionLoading(userId);
+    try {
+      await api.post('/v1/admin/recharge', null, { 
+        params: { target_user_id: userId, amount: parseFloat(amount) } 
+      });
+      fetchUsers();
+      fetchStats();
+      alert("Recharge successful!");
+    } catch (err) {
+      alert("Recharge failed.");
     } finally {
       setActionLoading(null);
     }
@@ -164,7 +186,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ token, onBack }) => {
           />
           <StatCard 
             icon={<BarChart3 className="text-emerald-600" />} 
-            label="Revenue" 
+            label="Total Revenue" 
             value={`$${stats?.total_revenue.toFixed(2) || '0.00'}`} 
             trend="+8%"
           />
@@ -242,6 +264,14 @@ const AdminPage: React.FC<AdminPageProps> = ({ token, onBack }) => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleManualRecharge(user.user_id)}
+                          disabled={actionLoading === user.user_id}
+                          className="p-2 bg-white border border-gray-200 rounded-lg text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-colors"
+                          title="Manual Recharge"
+                        >
+                          <CreditCard className="w-4 h-4" />
+                        </button>
                         <button 
                           onClick={() => toggleUserStatus(user.user_id, user.is_active)}
                           disabled={actionLoading === user.user_id}

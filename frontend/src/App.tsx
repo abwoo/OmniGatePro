@@ -57,6 +57,8 @@ function App() {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isTopupOpen, setIsTopupOpen] = useState(false);
+  const [topupAmount, setTopupAmount] = useState('10');
 
   const fetchUserInfo = async () => {
     if (!token) return;
@@ -145,8 +147,19 @@ function App() {
     }, 2000);
   };
 
-  const downloadReport = (runId: string) => {
-    window.open(`http://localhost:8000/v1/execution/${runId}/report?type=pdf&token=${token}`, '_blank');
+  const downloadReport = (run_id: string) => {
+    window.open(`http://localhost:8000/v1/execution/${run_id}/report?type=pdf&token=${token}`, '_blank');
+  };
+
+  const handleTopup = async () => {
+    try {
+      await api.post('/v1/user/topup', null, { params: { amount: parseFloat(topupAmount) } });
+      await fetchUserInfo();
+      setIsTopupOpen(false);
+      alert("Success! Credits added.");
+    } catch (err) {
+      alert("Top-up failed. Please try again.");
+    }
   };
 
   if (!token) {
@@ -291,6 +304,71 @@ function App() {
 
       <main className="flex-grow pt-28 pb-20 px-4 md:px-6">
         <div className="max-w-6xl mx-auto">
+          {/* Top-up Modal */}
+          <AnimatePresence>
+            {isTopupOpen && (
+              <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsTopupOpen(false)}
+                  className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                />
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="relative w-full max-w-md bg-white rounded-[32px] p-8 shadow-2xl border border-gray-100"
+                >
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-gray-900">Top-up Credits</h3>
+                    <button onClick={() => setIsTopupOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                      <X className="w-5 h-5 text-gray-400" />
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                      <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Current Balance</p>
+                      <p className="text-2xl font-bold text-blue-900">${userInfo?.balance.toFixed(2)}</p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Select Amount</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {['10', '50', '100'].map(amount => (
+                          <button 
+                            key={amount}
+                            onClick={() => setTopupAmount(amount)}
+                            className={`py-3 rounded-xl text-sm font-bold border-2 transition-all ${
+                              topupAmount === amount ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-100 text-gray-400 hover:border-gray-200'
+                            }`}
+                          >
+                            ${amount}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-4 space-y-3">
+                      <p className="text-[10px] text-gray-400 text-center leading-relaxed">
+                        Simulation: Clicking "Confirm Payment" will instantly add credits to your account. 
+                        In production, this would redirect to Stripe or Alipay.
+                      </p>
+                      <button 
+                        onClick={handleTopup}
+                        className="w-full h-12 btn-primary shadow-lg shadow-blue-500/20"
+                      >
+                        Confirm Payment
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
           <AnimatePresence mode="wait">
             {activeTab === 'execute' ? (
               <motion.div 
@@ -360,25 +438,34 @@ function App() {
                   </div>
                 </div>
 
-                {/* Sidebar Stats */}
-                <div className="lg:col-span-4 space-y-6">
-                  <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4">System Status</h3>
-                    <div className="space-y-4">
-                      <StatusRow icon={<ShieldCheck className="text-emerald-500" />} label="Security" value="Active" />
-                      <StatusRow icon={<Box className="text-blue-500" />} label="Nodes" value="3/3 Online" />
-                      <StatusRow icon={<LayoutGrid className="text-purple-500" />} label="Database" value="Healthy" />
+                  <div className="lg:col-span-4 space-y-6">
+                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-sm font-bold text-gray-900">System Status</h3>
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">LIVE</span>
+                      </div>
+                      <div className="space-y-4">
+                        <StatusRow icon={<ShieldCheck className="text-emerald-500" />} label="Security" value="Active" />
+                        <StatusRow icon={<Box className="text-blue-500" />} label="Nodes" value="3/3 Online" />
+                        <StatusRow icon={<LayoutGrid className="text-purple-500" />} label="Database" value="Healthy" />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-8 text-white relative overflow-hidden group">
-                    <div className="relative z-10">
-                      <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Current Balance</p>
-                      <h2 className="text-4xl font-bold tracking-tight font-mono">${userInfo?.balance.toFixed(2)}</h2>
+                    <div className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-8 text-white relative overflow-hidden group shadow-xl">
+                      <div className="relative z-10">
+                        <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Available Credits</p>
+                        <h2 className="text-4xl font-bold tracking-tight font-mono mb-6">${userInfo?.balance.toFixed(2)}</h2>
+                        <button 
+                          onClick={() => setIsTopupOpen(true)}
+                          className="w-full py-3 bg-white text-black rounded-xl text-sm font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Wallet className="w-4 h-4" />
+                          Top-up Credits
+                        </button>
+                      </div>
+                      <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/15 transition-colors duration-500" />
                     </div>
-                    <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/15 transition-colors duration-500" />
                   </div>
-                </div>
               </motion.div>
             ) : (
               <motion.div 
@@ -432,7 +519,7 @@ function App() {
                             </div>
                             <div className="flex flex-wrap gap-4 text-xs font-medium text-gray-500">
                               <span className="flex items-center gap-1.5"><Plus className="w-3.5 h-3.5" />{exec.actions_count} Actions</span>
-                              <span className="flex items-center gap-1.5"><CreditCard className="w-3.5 h-3.5" />${exec.total_cost.toFixed(4)}</span>
+                              <span className="flex items-center gap-1.5 text-blue-600"><CreditCard className="w-3.5 h-3.5" />Cost: ${exec.total_cost.toFixed(4)}</span>
                               <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{new Date(exec.start_time).toLocaleTimeString()}</span>
                             </div>
                           </div>

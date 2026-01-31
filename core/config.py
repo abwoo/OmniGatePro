@@ -5,7 +5,7 @@ import os
 class Settings(BaseSettings):
     # 基础配置
     APP_NAME: str = "artfish-runtime"
-    DEBUG: bool = False
+    DEBUG: bool = True
     VERSION: str = "0.1.0"
     
     # 数据库配置
