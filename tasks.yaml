@@ -1,0 +1,8 @@
+# Artfish Batch Task Example
+goals:
+  - "Analyze Q1 user growth data"
+  - "Generate retention cohort chart"
+  - "Export summary to PDF"
+constraints:
+  style: "business"
+  priority: 10

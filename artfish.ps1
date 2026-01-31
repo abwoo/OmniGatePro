@@ -1,23 +1,26 @@
-# artfish PowerShell Entry Point
-# Allows single-line execution from any location.
-# Usage: .\artfish.ps1 --goals "create art" "style it"
+# Artfish Entry Script (Windows PowerShell)
+# Handles dependency checks and launches the Python CLI
 
-$ScriptPath = $MyInvocation.MyCommand.Path
-$ProjectRoot = Split-Path $ScriptPath -Parent
+$ErrorActionPreference = "Stop"
 
-# Ensure we are in the project root
-Push-Location $ProjectRoot
+Write-Host "Starting Artfish Runtime Engine..." -ForegroundColor Cyan
 
+# 1. Check Python
 try {
-    # Check for python
-    if (!(Get-Command python -ErrorAction SilentlyContinue)) {
-        Write-Error "Python is not installed or not in PATH."
-        return
-    }
+    $pythonVersion = python --version 2>&1
+    Write-Host "Found Python: $pythonVersion" -ForegroundColor Green
+} catch {
+    Write-Host "Error: Python not found. Please install Python 3.8+." -ForegroundColor Red
+    exit 1
+}
 
-    # Execute artfish via module interface or direct script
-    python "$ProjectRoot\main.py" $args
+# 2. Check Dependencies (Silent check)
+$depsCheck = python -c "import rich, typer, questionary" 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Dependencies missing. Installing from requirements.txt..." -ForegroundColor Yellow
+    pip install -r requirements.txt
 }
-finally {
-    Pop-Location
-}
+
+# 3. Launch CLI
+$env:PYTHONPATH = ".;$env:PYTHONPATH"
+python cli.py @args

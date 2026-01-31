@@ -9,20 +9,19 @@ import os
 
 class Exporter:
     @staticmethod
-    def export_pdf(trace: ExecutionTrace, output_path: str, user_id: str = "Unknown"):
+    def export_pdf(trace: ExecutionTrace, output_path: str):
         """
-        生成 Apple 风格的简约专业 PDF 报告。
+        Generate a minimal execution report.
         """
         doc = SimpleDocTemplate(output_path, pagesize=letter, 
                                 rightMargin=40, leftMargin=40, 
                                 topMargin=40, bottomMargin=40)
         styles = getSampleStyleSheet()
         
-        # 定义 Apple 风格字体样式 (假设系统有类似 SF Pro 的字体，否则退而求其次)
         title_style = ParagraphStyle(
-            'AppleTitle',
+            'Title',
             parent=styles['Heading1'],
-            fontSize=28,
+            fontSize=24,
             textColor=colors.black,
             alignment=TA_LEFT,
             fontName='Helvetica-Bold',
@@ -30,16 +29,16 @@ class Exporter:
         )
         
         body_style = ParagraphStyle(
-            'AppleBody',
+            'Body',
             parent=styles['Normal'],
             fontSize=11,
-            textColor=colors.HexColor("#333333"),
+            textColor=colors.black,
             fontName='Helvetica',
-            leading=16
+            leading=14
         )
         
         meta_style = ParagraphStyle(
-            'AppleMeta',
+            'Meta',
             parent=styles['Normal'],
             fontSize=9,
             textColor=colors.gray,
@@ -48,21 +47,21 @@ class Exporter:
 
         elements = []
 
-        # 标题
-        elements.append(Paragraph("Execution Evidence", title_style))
-        date_str = trace.events[0].timestamp.strftime("%Y-%m-%d") if trace.events else 'N/A'
-        elements.append(Paragraph(f"USER: {user_id} | DATE: {date_str}", meta_style))
+        # Title
+        elements.append(Paragraph("Execution Report", title_style))
+        date_str = trace.events[0].timestamp.strftime("%Y-%m-%d %H:%M:%S") if trace.events else 'N/A'
+        elements.append(Paragraph(f"DATE: {date_str}", meta_style))
         elements.append(Spacer(1, 20))
         elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.lightgrey))
         elements.append(Spacer(1, 20))
 
-        # 核心摘要
+        # Summary
         summary_data = [
-            ["Status", "Total Actions", "Total Cost", "Currency"],
-            ["SUCCESS" if all(e.status.value in ["SUCCESS", "COMPLETED"] for e in trace.events) else "FAILED", 
-             len(trace.events), f"{trace.total_cost:.4f}", "USD"]
+            ["Status", "Total Actions"],
+            ["SUCCESS" if all(e.status.value in ["success", "completed"] for e in trace.events) else "FAILED", 
+             len(trace.events)]
         ]
-        t = Table(summary_data, colWidths=[120, 120, 120, 120])
+        t = Table(summary_data, colWidths=[200, 200])
         t.setStyle(TableStyle([
             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
             ('FONTSIZE', (0,0), (-1,-1), 10),
@@ -74,20 +73,17 @@ class Exporter:
         elements.append(t)
         elements.append(Spacer(1, 30))
 
-        # 详细步骤
+        # Logs
         elements.append(Paragraph("Action Logs", styles['Heading2']))
         elements.append(Spacer(1, 10))
         
         for event in trace.events:
-            # 每一个动作作为一个小卡片风格
             action_title = f"<b>{event.action_id}</b> <font color='gray'>({event.status.value})</font>"
             elements.append(Paragraph(action_title, body_style))
             
-            # 缩进显示细节
-            detail_text = f"Cost: {event.cost:.4f} USD | Duration: {event.metadata.get('duration_ms', 0):.2f}ms"
+            detail_text = f"Time: {event.timestamp.strftime('%H:%M:%S.%f')}"
             elements.append(Paragraph(detail_text, meta_style))
             
-            # 渲染结果摘要
             output_snippet = str(event.result_payload)[:200] + "..." if len(str(event.result_payload)) > 200 else str(event.result_payload)
             elements.append(Paragraph(f"Result: {output_snippet}", body_style))
             
@@ -95,9 +91,8 @@ class Exporter:
             elements.append(HRFlowable(width="80%", thickness=0.2, color=colors.whitesmoke, dash=(2,2)))
             elements.append(Spacer(1, 15))
 
-        # 页脚
         elements.append(Spacer(1, 40))
-        elements.append(Paragraph("Artfish Runtime - Certified Execution Log", meta_style))
+        elements.append(Paragraph("Artfish Runtime - Execution Log", meta_style))
 
         doc.build(elements)
         return output_path

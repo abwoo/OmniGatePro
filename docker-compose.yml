@@ -7,37 +7,58 @@ services:
       POSTGRES_USER: artfish
       POSTGRES_PASSWORD: artfish_password
       POSTGRES_DB: artfish_db
-    ports:
-      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U artfish -d artfish_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build: .
-    command: python -m api.main
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
     environment:
       DATABASE_URL: postgresql://artfish:artfish_password@db:5432/artfish_db
       REDIS_URL: redis://redis:6379/0
+      FORCE_SYNC_EXECUTION: "False"
     ports:
       - "8000:8000"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   worker:
     build: .
-    command: celery -A core.worker worker --loglevel=info
+    command: celery -A core.worker.celery_app worker --loglevel=info
     environment:
       DATABASE_URL: postgresql://artfish:artfish_password@db:5432/artfish_db
       REDIS_URL: redis://redis:6379/0
+      FORCE_SYNC_EXECUTION: "False"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # CLI Test Environment
+  cli:
+    build: .
+    environment:
+      ARTFISH_API_URL: http://api:8000
+    entrypoint: ["./artfish"]
+    depends_on:
+      - api
 
 volumes:
   postgres_data:

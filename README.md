@@ -1,96 +1,127 @@
-# Artfish: Model-Agnostic Artistic Agent Runtime
+# Artfish Gateway 🦞
 
-`artfish` 是一个教育性的运行时引擎，旨在将“艺术创作”视为一个严格定义的执行过程。与传统的艺术生成工具不同，`artfish` 的核心目标不是最终的像素输出，而是**执行追踪（ExecutionTrace）**——即创作过程中的决策日志。
-
-## 1. 核心理念
-
-*   **产品即追踪 (The Product is the Trace)**: 我们关注决策过程。系统记录每一个 `AtomicAction` 的状态、耗时、成本和结果。
-*   **模型无关 (Model Agnosticism)**: 核心逻辑不依赖于任何具体的 AI 模型（如 OpenAI 或 Diffusers）。所有模型通过 `BackendAdapter` 抽象层接入。
-*   **意图驱动 (Intent-First)**: 系统处理结构化的 `ArtIntent`，而非松散的文本提示词。
-
-## 2. 核心架构
-
-### A. 数据结构 (`artfish.core`)
-*   **`ArtIntent`**: 声明式的用户意图。包含目标（goals）、约束（constraints）和元数据。
-*   **`ExecutionPlan`**: 编译后的 DAG（有向无环图）。将意图分解为一系列有依赖关系的原子操作。
-*   **`ExecutionTrace`**: 唯一的真理来源。记录从开始到结束的所有 `TraceEvent`。
-
-### B. 执行引擎
-*   **`Compiler`**: 将高级意图转换为可执行计划。支持自动依赖推断（如：Transform 操作自动依赖 Generate 操作）。
-*   **`Runtime`**: 执行主循环。管理生命周期（PENDING -> RUNNING -> COMPLETED/FAILED），支持**并行执行**和**重试机制**。
-*   **`Dispatcher`**: 智能路由。根据操作类型和后端提示，将任务分配给合适的 `BackendAdapter`。
-
-### C. 抽象接口 (`artfish.interfaces`)
-*   **`BackendAdapter`**: 抽象基类。定义了后端必须实现的 `execute` 接口，确保系统可扩展性。
-
-## 3. 快速开始
-
-### 在线体验 (Web Version)
-您可以直接访问部署在 GitHub Pages 上的 Web 版本进行体验：
-👉 **[Artfish AI Platform 在线演示](https://abwoo.github.io/artfish-ai-platform/)**
-
-> **模式说明**：本平台采用 **Frictionless (无感) 商业化模式**。您无需注册登录，访问即自动获得一个唯一的 **Guest ID** 并赠送 $1.00 体验金。
-> **余额保留**：您的余额绑定在浏览器本地。如果您更换设备，请在个人资料中复制您的 **Pass ID**。
-
-### 环境要求
-*   Python 3.10+
-*   PowerShell (可选，用于快捷调用)
-
-### 安装
-```powershell
-git clone <repository-url>
-cd artfish
-pip install -r requirements.txt
-```
-
-### 单行运行 (PowerShell)
-```powershell
-.\artfish.ps1 --goals "generate_landscape" "add_sunset_style" --max-steps 10
-```
-
-### 命令行运行
-```bash
-python main.py --goals "create_character" "colorize" --parallel
-```
-
-## 4. 目录结构
-
-```text
-artfish/
-├── core/
-│   ├── intent.py       # 意图模型
-│   ├── plan.py         # 执行计划与原子操作
-│   ├── runtime.py      # 编译器、运行时与调度器
-│   ├── trace.py        # 追踪系统
-│   └── context.py      # 执行上下文与结果注入
-├── interfaces/
-│   └── backend.py      # 适配器接口
-├── backends/
-│   └── mock.py         # 模拟后端实现（用于测试）
-├── main.py             # CLI 接口与演示脚本
-└── artfish.ps1         # PowerShell 快捷入口
-```
-
-## 5. 高级功能
-
-*   **依赖注入**: `Runtime` 会自动将前置操作的结果注入到后续操作的参数中。
-*   **并行计算**: 互不依赖的操作（如同时生成两张互不相关的草图）会在不同的线程中并行执行。
-*   **错误恢复**: 支持 `max_retries` 配置，后端执行失败时可自动尝试重新运行。
-*   **统计分析**: 运行结束后自动生成执行报告，包括成功率、总成本、平均耗时等。
-
-## 6. 开发约束
-
-1.  **禁止直接导入供应商 SDK**: 严禁在 `core` 目录中导入 `openai` 等包。
-2.  **强制类型提示**: 所有代码必须使用 Python `typing` 进行类型标注。
-3.  **异常记录**: 任何后端执行错误都应转化为 `FAILED` 状态的事件记录，而不是导致程序崩溃。
-
-## 7. 管理员配置 (Creator Only)
-
-如果您是项目的创建者并希望进入管理后台：
-1.  在本地 `.env` 文件中设置 `SUPER_ADMIN_EMAIL=your-secret-admin-key`。
-2.  在前端页面中，手动将浏览器的 `localStorage.getItem('artfish_guest_id')` 设置为该 key。
-3.  刷新页面，系统将自动识别并赋予 `ADMIN` 权限。
+Artfish 是一个基于 Python 开发的轻量级、高性能 AI 任务执行引擎。它对齐了 **Clawdbot (OpenClaw)** 的核心架构，采用“网关 + 技能”模式，既可以作为独立的后端服务运行，也可以通过 **Model Context Protocol (MCP)** 完美集成到 Claude Desktop 等 AI 助手。
 
 ---
 
-**Artfish** - *Bringing Rigor to Computational Creativity.*
+## 📖 目录
+- [🚀 快速开始](#-快速开始)
+- [✨ 核心特性](#-核心特性)
+- [🧩 技能系统 (Skills)](#-技能系统-skills)
+- [🛠️ 命令行控制台 (CLI)](#-命令行控制台-cli)
+- [🔌 Claude 插件集成 (MCP)](#-claude-插件集成-mcp)
+- [🛡️ 安全与权限](#-安全与权限)
+- [📅 更新日志](#-更新日志)
+
+---
+
+## 🚀 快速开始
+
+### 1. 环境要求
+- **操作系统**: Windows 10+, macOS 12+, Linux
+- **运行时**: Python 3.8+
+- **必备工具**: pip
+
+### 2. 一键式初始化
+克隆项目后，在根目录下运行：
+
+**Windows (PowerShell):**
+```powershell
+.\artfish.ps1
+```
+
+**Unix/Mac (Bash):**
+```bash
+chmod +x artfish
+./artfish
+```
+*脚本会自动检测环境、安装依赖并启动交互式主向导。*
+
+---
+
+## ✨ 核心特性
+
+- **Clawdbot 架构对齐**: 采用网关 (Gateway) 模式管理会话与工具分发。
+- **模块化技能 (Skills)**: 支持动态加载 Python 编写的技能插件，灵活扩展 AI 能力。
+- **AI 原生设计**: 完美适配 Anthropic MCP 协议，支持 Claude 毫秒级调用。
+- **Figma 级终端交互**: 基于 `Rich` 打造，支持彩色日志、动态进度条和多级子命令。
+- **高性能架构**: 全量实施延迟加载 (Lazy Loading) 与 stdio 极速传输。
+
+---
+
+## 🧩 技能系统 (Skills)
+
+Artfish 的核心能力由 **Skills** 提供。每个技能可以包含多个可被 AI 调用的工具。
+
+### 自定义技能示例
+在 `skills/` 目录下创建一个 `.py` 文件：
+```python
+from core.skill import BaseSkill, skill_tool
+
+class MySkill(BaseSkill):
+    name = "my_skill"
+    description = "我的自定义技能"
+
+    @skill_tool(description="执行一个自定义操作")
+    def do_something(self, param: str):
+        return f"操作成功: {param}"
+```
+
+### 已内置技能
+- **System**: 提供文件读写、终端命令执行等系统级操作。
+
+---
+
+## 🛠️ 命令行控制台 (CLI)
+
+直接输入 `./artfish` 即可进入交互菜单。
+
+| 命令 | 说明 | 示例 |
+| :--- | :--- | :--- |
+| `run` | 运行意图任务 | `./artfish run "设计 Logo" --apply` |
+| `status` | 实时监控指标 | `./artfish status --verbose` |
+| `doctor` | 系统环境诊断 | `./artfish doctor` |
+| `benchmark` | 性能压力测试 | `./artfish benchmark` |
+| `config` | 交互式配置管理 | `./artfish config` |
+
+---
+
+## 🔌 Claude 插件集成 (MCP)
+
+Artfish 作为 **MCP Server** 运行，赋予 Claude 操作本地系统和执行复杂任务的能力。
+
+### 配置步骤
+1. 确保已安装 MCP：`pip install mcp`
+2. 打开 Claude 配置文件 (`%APPDATA%\Claude\claude_desktop_config.json`)。
+3. 添加以下配置：
+```json
+{
+  "mcpServers": {
+    "artfish": {
+      "command": "python",
+      "args": ["d:/artfish/mcp_server.py"],
+      "env": { "PYTHONPATH": "d:/artfish" }
+    }
+  }
+}
+```
+4. 重启 Claude Desktop 即可看到 Artfish 提供的所有 Skills 工具。
+
+---
+
+## 🛡️ 安全与权限
+
+1. **Dry-run 保护**: 默认开启预览模式，敏感操作需显式追加 `--apply`。
+2. **非 Root 运行**: 建议以普通用户运行，必要时使用 `sudo` 提升。
+3. **沙箱建议**: 在执行不可信命令时，建议配合 Docker 等容器化环境。
+
+---
+
+## 📅 更新日志
+
+- **v0.4.0 (当前)**: 重构为 Gateway 架构，引入 Skills 系统，全面对齐 Clawdbot 设计理念。
+- **v0.3.0**: 引入 MCP 协议支持，优化冷启动速度。
+- **v0.2.0**: 重构终端交互，引入 Typer + Rich。
+
+---
+**Artfish Gateway - 专业的 AI 技能执行中枢**

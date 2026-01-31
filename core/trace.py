@@ -9,16 +9,14 @@ class ActionStatus(Enum):
     RUNNING = "running"
     SUCCESS = "success"
     FAIL = "fail"
-    COMPLETED = "completed" # 兼容旧代码
+    COMPLETED = "completed"
 
 @dataclass(frozen=True)
-class TraceEvent: # 改名为 TraceEvent 以兼容测试
+class TraceEvent:
     timestamp: datetime
     action_id: str
     status: ActionStatus
     result_payload: Any
-    cost: float = 0.0
-    unit: str = "USD"
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
@@ -27,10 +25,6 @@ class ExecutionTrace:
 
     def add_event(self, event: TraceEvent):
         self.events.append(event)
-
-    @property
-    def total_cost(self) -> float:
-        return sum(e.cost for e in self.events)
 
     def get_action_result(self, action_id: str) -> Optional[Dict[str, Any]]:
         for event in reversed(self.events):
@@ -62,8 +56,7 @@ class ExecutionTrace:
             "completed_actions": completed,
             "failed_actions": failed,
             "success_rate": (completed / total_actions * 100) if total_actions > 0 else 0,
-            "total_cost": self.total_cost,
-            "duration_seconds": 0.0, # 简化处理
+            "duration_seconds": 0.0,
             "status_counts": {}
         }
 

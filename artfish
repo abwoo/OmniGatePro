@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+# Artfish Entry Script (Unix/Mac)
+# Handles dependency checks and launches the Python CLI
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${GREEN}Starting Artfish Runtime Engine...${NC}"
+
+# 1. Check Python
+if ! command -v python3 &> /dev/null; then
+    echo -e "${RED}Error: python3 is not installed.${NC}"
+    exit 1
+fi
+
+# 2. Check Dependencies (Silent check)
+python3 -c "import rich, typer, questionary" 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo -e "${YELLOW}Dependencies missing. Installing from requirements.txt...${NC}"
+    pip install -r requirements.txt
+fi
+
+# 3. Launch CLI
+export PYTHONPATH=$PYTHONPATH:.
+python3 cli.py "$@"
