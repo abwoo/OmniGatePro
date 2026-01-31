@@ -57,8 +57,13 @@ jobs:
         run: |
           npm install
           npm run build
+          # 复制 index.html 到 404.html 以支持 SPA 路由
+          cp dist/index.html dist/404.html
+          # 创建 .nojekyll 文件以禁用 Jekyll 过滤
+          touch dist/.nojekyll
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./frontend/dist
+          enable_jekyll: false
