@@ -12,21 +12,11 @@
 import sys
 from pathlib import Path
 
-try:
-    from artfish.core.intent import ArtIntent
-    from artfish.core.runtime import Runtime
-    from artfish.core.plan import ExecutionPlan, AtomicAction, ActionType
-    from artfish.core.context import ExecutionContext
-    from artfish.backends.mock import MockBackend
-except ImportError:
-    artfish_dir = Path(__file__).parent
-    parent_dir = artfish_dir.parent
-    sys.path.insert(0, str(parent_dir))
-    from artfish.core.intent import ArtIntent
-    from artfish.core.runtime import Runtime
-    from artfish.core.plan import ExecutionPlan, AtomicAction, ActionType
-    from artfish.core.context import ExecutionContext
-    from artfish.backends.mock import MockBackend
+from core.intent import ArtIntent
+from core.runtime import Runtime
+from core.plan import ExecutionPlan, AtomicAction, ActionType
+from core.context import ExecutionContext
+from backends.mock import MockBackend
 
 
 def test_context_and_result_passing():
@@ -115,7 +105,7 @@ def test_result_injection():
     context = ExecutionContext()
     
     # 模拟第一个操作的结果
-    from artfish.core.trace import TraceEvent, ActionStatus
+    from core.trace import TraceEvent, ActionStatus
     from datetime import datetime
     
     event1 = TraceEvent(

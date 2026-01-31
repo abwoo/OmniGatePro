@@ -12,19 +12,10 @@ artfish 功能演示测试文件
 import sys
 from pathlib import Path
 
-try:
-    from artfish.core.intent import ArtIntent
-    from artfish.core.runtime import Runtime
-    from artfish.core.plan import ExecutionPlan, AtomicAction, ActionType
-    from artfish.backends.mock import MockBackend
-except ImportError:
-    artfish_dir = Path(__file__).parent
-    parent_dir = artfish_dir.parent
-    sys.path.insert(0, str(parent_dir))
-    from artfish.core.intent import ArtIntent
-    from artfish.core.runtime import Runtime
-    from artfish.core.plan import ExecutionPlan, AtomicAction, ActionType
-    from artfish.backends.mock import MockBackend
+from core.intent import ArtIntent
+from core.runtime import Runtime
+from core.plan import ExecutionPlan, AtomicAction, ActionType
+from backends.mock import MockBackend
 
 
 def demo_basic_execution():

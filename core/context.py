@@ -7,7 +7,7 @@ ExecutionContext: 执行上下文管理。
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
-from .trace import TraceEntry, ActionStatus
+from .trace import TraceEvent, ActionStatus
 
 
 @dataclass
@@ -29,8 +29,8 @@ class ActionResult:
     error_message: Optional[str] = None
     """错误信息"""
     
-    timestamp: Optional[str] = None
-    """完成时间戳"""
+    timestamp: Optional[datetime] = None
+    """完成时间"""
     
     cost: float = 0.0
     """执行成本"""
@@ -40,7 +40,7 @@ class ActionResult:
     
     def is_successful(self) -> bool:
         """检查操作是否成功"""
-        return self.status == ActionStatus.SUCCESS
+        return self.status in [ActionStatus.SUCCESS, ActionStatus.COMPLETED]
     
     def get_result(self, key: Optional[str] = None) -> Any:
         """
@@ -74,28 +74,28 @@ class ExecutionContext:
         self._results: Dict[str, ActionResult] = {}
         """操作结果字典，key为action_id"""
     
-    def store_result(self, entry: TraceEntry) -> None:
+    def store_result(self, event: TraceEvent) -> None:
         """
         存储操作结果。
         
         Args:
-            entry: 追踪条目，包含操作的执行结果
+            event: 追踪条目，包含操作的执行结果
         """
-        # 如果 status 是 FAIL，payload 可能包含错误信息
+        # 如果 status 是 FAIL，result_payload 可能包含错误信息
         error_msg = None
-        if entry.status == ActionStatus.FAIL and isinstance(entry.payload, dict):
-            error_msg = entry.payload.get("error")
+        if event.status == ActionStatus.FAIL and isinstance(event.result_payload, dict):
+            error_msg = event.result_payload.get("error")
 
         result = ActionResult(
-            action_id=entry.action_id,
-            status=entry.status,
-            result_payload=entry.payload,
+            action_id=event.action_id,
+            status=event.status,
+            result_payload=event.result_payload,
             error_message=error_msg,
-            timestamp=entry.timestamp,
-            cost=entry.cost,
-            metadata=entry.metadata
+            timestamp=event.timestamp,
+            cost=event.cost,
+            metadata=event.metadata
         )
-        self._results[entry.action_id] = result
+        self._results[event.action_id] = result
     
     def get_result(self, action_id: str) -> Optional[ActionResult]:
         """

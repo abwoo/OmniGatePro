@@ -10,15 +10,21 @@ class MockBackend(BackendAdapter):
     MockBackend 是系统的参考实现。
     它用于在没有外部 API 密钥的环境下模拟高延迟的生成过程。
     """
+    def __init__(self, name: str = "mock", latency: float = 0.5):
+        self.name = name
+        self.latency = latency
+
     def execute(self, action: AtomicAction) -> BackendResponse:
         # 模拟模型处理延迟
-        time.sleep(0.5)
+        time.sleep(self.latency)
         
-        goal = action.params.get("goal", "unspecified")
+        # 兼容旧代码 params 和新代码 parameters
+        params = getattr(action, "parameters", getattr(action, "params", {}))
+        goal = params.get("goal", "unspecified")
         output = f"[Simulated Image Artifact] Concept: {goal} | Status: Rendered"
         
         # 商业化：模拟 Token 消耗和成本
-        prompt_tokens = len(str(action.params)) // 4
+        prompt_tokens = len(str(params)) // 4
         completion_tokens = len(output) // 4
         
         # 基础成本 + 随机波动

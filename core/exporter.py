@@ -50,7 +50,8 @@ class Exporter:
 
         # 标题
         elements.append(Paragraph("Execution Evidence", title_style))
-        elements.append(Paragraph(f"USER: {user_id} | DATE: {trace.entries[0].timestamp[:10] if trace.entries else 'N/A'}", meta_style))
+        date_str = trace.events[0].timestamp.strftime("%Y-%m-%d") if trace.events else 'N/A'
+        elements.append(Paragraph(f"USER: {user_id} | DATE: {date_str}", meta_style))
         elements.append(Spacer(1, 20))
         elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.lightgrey))
         elements.append(Spacer(1, 20))
@@ -58,8 +59,8 @@ class Exporter:
         # 核心摘要
         summary_data = [
             ["Status", "Total Actions", "Total Cost", "Currency"],
-            ["SUCCESS" if all(e.status.value == "SUCCESS" for e in trace.entries) else "FAILED", 
-             len(trace.entries), f"{trace.total_cost:.4f}", "USD"]
+            ["SUCCESS" if all(e.status.value in ["SUCCESS", "COMPLETED"] for e in trace.events) else "FAILED", 
+             len(trace.events), f"{trace.total_cost:.4f}", "USD"]
         ]
         t = Table(summary_data, colWidths=[120, 120, 120, 120])
         t.setStyle(TableStyle([
@@ -77,17 +78,17 @@ class Exporter:
         elements.append(Paragraph("Action Logs", styles['Heading2']))
         elements.append(Spacer(1, 10))
         
-        for entry in trace.entries:
+        for event in trace.events:
             # 每一个动作作为一个小卡片风格
-            action_title = f"<b>{entry.action_id}</b> <font color='gray'>({entry.status.value})</font>"
+            action_title = f"<b>{event.action_id}</b> <font color='gray'>({event.status.value})</font>"
             elements.append(Paragraph(action_title, body_style))
             
             # 缩进显示细节
-            detail_text = f"Cost: {entry.cost:.4f} USD | Duration: {entry.metadata.get('duration_ms', 0):.2f}ms"
+            detail_text = f"Cost: {event.cost:.4f} USD | Duration: {event.metadata.get('duration_ms', 0):.2f}ms"
             elements.append(Paragraph(detail_text, meta_style))
             
             # 渲染结果摘要
-            output_snippet = str(entry.payload)[:200] + "..." if len(str(entry.payload)) > 200 else str(entry.payload)
+            output_snippet = str(event.result_payload)[:200] + "..." if len(str(event.result_payload)) > 200 else str(event.result_payload)
             elements.append(Paragraph(f"Result: {output_snippet}", body_style))
             
             elements.append(Spacer(1, 15))

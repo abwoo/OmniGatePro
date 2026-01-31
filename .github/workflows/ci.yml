@@ -27,6 +27,8 @@ jobs:
     - name: Security Scan (Bandit)
       run: bandit -r . -x ./tests,./venv,test_advanced.py,test_api.py,test_demo.py,demo_async.py
     - name: Run Tests
+      env:
+        PYTHONPATH: .
       run: pytest --cov=. --cov-report=xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
