@@ -6,8 +6,6 @@ import {
   Lock, 
   ArrowRight, 
   Loader2, 
-  Github, 
-  Chrome, 
   ShieldCheck, 
   AlertCircle,
   Eye,
