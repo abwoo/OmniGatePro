@@ -14,13 +14,23 @@ OmniGate Pro 是一款专为 **Clawdbot** (OpenClaw) 设计的轻量化增强插
 
 ---
 
-## 🛠️ 快速安装 (3 分钟)
+## � 极简配置 (Smartphone-like UX)
 
-```powershell
-pip install -r requirements.txt
-python cli.py setup-keys
-python cli.py doctor
-```
+只需三步，即可完成 OmniGate 与 Clawdbot 的连接：
+
+1.  **环境初始化**:
+    ```powershell
+    pip install -r requirements.txt
+    python cli.py setup-keys
+    ```
+2.  **一键连接 Clawdbot**:
+    ```powershell
+    python cli.py connect-claw
+    ```
+3.  **启动服务**:
+    ```powershell
+    python core/mcp_server.py
+    ```
 
 ---
 

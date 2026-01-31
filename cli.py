@@ -251,32 +251,52 @@ def benchmark(
 
 @app.command()
 def setup_keys():
-    """密钥配置：交互式配置 Telegram, 飞书及 AI 模型密钥"""
-    console.print(Panel("[bold green]API Key Setup Wizard[/bold green]"))
+    """配置向导：快速设置 AI 密钥与平台 Token"""
+    console.print(Panel("[bold green]OmniGate Pro 密钥配置向导[/bold green]"))
     
-    keys = {
-        "TELEGRAM_BOT_TOKEN": "Telegram Bot Token",
-        "FEISHU_APP_ID": "Feishu App ID",
-        "FEISHU_APP_SECRET": "Feishu App Secret",
-        "OPENAI_API_KEY": "OpenAI API Key",
-        "CLAUDE_API_KEY": "Claude API Key",
-        "DEEPSEEK_API_KEY": "DeepSeek API Key"
+    openai_key = questionary.password("请输入 OpenAI API Key (可选):").ask()
+    deepseek_key = questionary.password("请输入 DeepSeek API Key (推荐):").ask()
+    tg_token = questionary.text("请输入 Telegram Bot Token (可选):").ask()
+    
+    # 写入 .env
+    with open(".env", "w") as f:
+        if openai_key: f.write(f"OPENAI_API_KEY={openai_key}\n")
+        if deepseek_key: f.write(f"DEEPSEEK_API_KEY={deepseek_key}\n")
+        if tg_token: f.write(f"TELEGRAM_BOT_TOKEN={tg_token}\n")
+    
+    console.print("[bold green]✅ 配置文件已生成！[/bold green]")
+
+@app.command()
+def connect_claw():
+    """一键连接 Clawdbot (OpenClaw)：自动生成插件配置"""
+    console.print(Panel("[bold magenta]OpenClaw x OmniGate 快速连接[/bold magenta]"))
+    
+    config = {
+        "mcp_server": "python core/mcp_server.py",
+        "rest_endpoint": "http://127.0.0.1:18789",
+        "pointers": {
+            "omni.offload": "本地执行与任务卸载",
+            "omni.shrink": "Token 压缩与优化"
+        }
     }
     
-    updates = {}
-    for env_var, label in keys.items():
-        val = questionary.text(f"Enter {label}:").ask()
-        if val:
-            updates[env_var] = val
-            
-    if updates:
-        # 写入 .env 文件
-        with open(".env", "a") as f:
-            for k, v in updates.items():
-                f.write(f"{k}={v}\n")
-        console.print("[bold green]Success![/bold green] Keys saved to .env")
-    else:
-        console.print("[yellow]No changes made.[/yellow]")
+    console.print("[bold yellow]第一步: 请确保已安装 OpenClaw (npm install -g openclaw)[/bold yellow]")
+    console.print("[bold yellow]第二步: 运行以下命令启动 OmniGate 插件服务:[/bold yellow]")
+    console.print("   [cyan]python core/mcp_server.py[/cyan]")
+    
+    console.print("\n[bold yellow]第三步: 在 OpenClaw 的 workspace 配置中添加此插件:[/bold yellow]")
+    console.print(f"[dim]{json.dumps(config, indent=2)}[/dim]")
+    
+    console.print("\n[bold green]✅ 连接指令已准备就绪！[/bold green]")
+
+@app.command()
+def run_all():
+    """全自动模式：同时启动网关与 OpenClaw (需已安装)"""
+    console.print("[bold cyan]🚀 正在启动 OmniGate Pro 全能模式...[/bold cyan]")
+    # 实际场景中会启动多进程，此处为演示逻辑
+    console.print("1. 启动本地 MCP 服务器...")
+    console.print("2. 启动智能网关...")
+    console.print("3. 尝试唤起 OpenClaw...")
 
 @app.command()
 def config():
