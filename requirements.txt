@@ -11,10 +11,12 @@ pydantic-settings>=2.0.0
 fastapi>=0.100.0
 uvicorn>=0.23.0
 httpx>=0.24.0
+slowapi>=0.1.9
 # Authentication
 python-jose[cryptography]>=3.3.0
-passlib[recommended]>=1.7.4
+passlib[recommended,bcrypt,argon2]>=1.7.4
 bcrypt>=4.0.0
+argon2-cffi>=23.1.0
 python-multipart>=0.0.6
 
 # Database Persistence

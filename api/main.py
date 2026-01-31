@@ -98,7 +98,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             if not csrf_token_cookie or csrf_token_cookie != csrf_token_header:
                 # 开发环境下暂不强制校验以避免测试困难，生产环境应启用
                 if not settings.DEBUG:
-                    return JSONResponse(status_code=403, content={"detail": "CSRF token mismatch"})
+                    logger.warning(f"CSRF check failed: cookie={csrf_token_cookie}, header={csrf_token_header}")
+                    return JSONResponse(
+                        status_code=403, 
+                        content={"detail": "Security validation failed (CSRF). Please refresh the page and try again."}
+                    )
         
         response = await call_next(request)
         
@@ -148,7 +152,11 @@ app.add_middleware(
 # 添加 CORS 支持
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://abwoo.github.io"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -257,33 +265,41 @@ async def get_admin_user(current_user: UserAccount = Depends(get_current_user)):
 @app.post("/v1/auth/register", response_model=Token)
 @limiter.limit("3/minute") # 同一IP 60秒内≤3次
 async def register(request: Request, user_in: UserRegister, db: Session = Depends(get_db)):
+    logger.info(f"Attempting to register user: {user_in.email}")
     # 检查邮箱是否已存在
     if db.query(UserAccount).filter(UserAccount.email == user_in.email).first():
+        logger.warning(f"Registration failed: Email {user_in.email} already exists")
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    user_id = user_in.user_id or str(uuid.uuid4())[:8]
-    api_key = f"sk-artfish-{uuid.uuid4().hex[:12]}"
-    
-    user = UserAccount(
-        user_id=user_id,
-        email=user_in.email,
-        hashed_password=get_password_hash(user_in.password),
-        api_key_hash=api_key,
-        role=UserRole.USER,
-        balance=10.0
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    
-    log_audit(db, user.user_id, "register", {"email": user.email}, request)
-    
-    access_token = create_access_token(data={"sub": user.user_id, "role": user.role.value})
-    return {"access_token": access_token, "token_type": "bearer"} # nosec B105
+    try:
+        user_id = user_in.user_id or str(uuid.uuid4())[:8]
+        api_key = f"sk-artfish-{uuid.uuid4().hex[:12]}"
+        
+        user = UserAccount(
+            user_id=user_id,
+            email=user_in.email,
+            hashed_password=get_password_hash(user_in.password),
+            api_key_hash=api_key,
+            role=UserRole.USER,
+            balance=10.0
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+        log_audit(db, user.user_id, "register", {"email": user.email}, request)
+        logger.info(f"User registered successfully: {user.email}")
+        
+        access_token = create_access_token(data={"sub": user.user_id, "role": user.role.value})
+        return {"access_token": access_token, "token_type": "bearer"}
+    except Exception as e:
+        logger.error(f"Registration error for {user_in.email}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 @app.post("/v1/auth/token", response_model=Token)
 @limiter.limit("10/minute")
 async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    logger.info(f"Login attempt for: {form_data.username}")
     # 预置管理员逻辑
     if form_data.username == "admin@example.com":
         admin = db.query(UserAccount).filter(UserAccount.email == "admin@example.com").first()

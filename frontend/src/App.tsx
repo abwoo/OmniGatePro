@@ -70,9 +70,18 @@ function App() {
   };
 
   useEffect(() => {
-    if (token) {
-      fetchUserInfo();
-    }
+    // 初始获取 CSRF Token 和用户信息
+    const init = async () => {
+      try {
+        await api.get('/health'); // 触发获取 CSRF Cookie
+        if (token) {
+          await fetchUserInfo();
+        }
+      } catch (err) {
+        console.error("Initialization failed", err);
+      }
+    };
+    init();
   }, [token]);
 
   const handleLogin = (newToken: string) => {
