@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
     
+    # 管理员配置 (建议通过环境变量设置)
+    SUPER_ADMIN_EMAIL: str = os.getenv("SUPER_ADMIN_EMAIL", "admin@artfish.ai")
+    
     # 存储配置
     EXPORT_DIR: str = "exports"
     

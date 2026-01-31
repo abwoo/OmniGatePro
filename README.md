@@ -29,8 +29,8 @@
 您可以直接访问部署在 GitHub Pages 上的 Web 版本进行体验：
 👉 **[Artfish AI Platform 在线演示](https://abwoo.github.io/artfish-ai-platform/)**
 
-> **提示**：Web 版本需要连接后端服务。如果您在本地运行后端 (`python api/main.py`)，请在登录页面的 **API Config** 中确保地址设置为 `http://localhost:8000`。
-> **预置管理员账号**：`admin@example.com` / `Admin123!@#456`
+> **提示**：Web 版本是一个客户端演示。如果您在本地运行后端 (`python api/main.py`)，请在登录页面的 **API Config** 中确保地址设置为 `http://localhost:8000`。
+> **权限说明**：普通用户注册后拥有基础权限。管理员权限（Admin Console）仅限系统创建者使用。
 
 ### 环境要求
 *   Python 3.10+
@@ -83,6 +83,13 @@ artfish/
 1.  **禁止直接导入供应商 SDK**: 严禁在 `core` 目录中导入 `openai` 等包。
 2.  **强制类型提示**: 所有代码必须使用 Python `typing` 进行类型标注。
 3.  **异常记录**: 任何后端执行错误都应转化为 `FAILED` 状态的事件记录，而不是导致程序崩溃。
+
+## 7. 管理员配置 (Creator Only)
+
+如果您是项目的创建者并希望进入管理后台：
+1.  在本地创建 `.env` 文件（或修改系统环境变量）。
+2.  设置 `SUPER_ADMIN_EMAIL=your-email@example.com`。
+3.  启动后端后，使用该邮箱进行登录。系统会自动识别并赋予 `ADMIN` 权限（初始密码默认为 `Admin123!@#`）。
 
 ---
 

@@ -279,13 +279,13 @@ async def register(request: Request, user_in: UserRegister, db: Session = Depend
         api_key = f"sk-artfish-{uuid.uuid4().hex[:12]}"
         
         user = UserAccount(
-            user_id=user_id,
-            email=user_in.email,
-            hashed_password=get_password_hash(user_in.password),
-            api_key_hash=api_key,
-            role=UserRole.USER,
-            balance=10.0
-        )
+        user_id=user_id,
+        email=user_in.email,
+        hashed_password=get_password_hash(user_in.password),
+        api_key_hash=api_key,
+        role=UserRole.USER, # 强制为普通用户
+        balance=10.0
+    )
         db.add(user)
         db.commit()
         db.refresh(user)
@@ -303,23 +303,24 @@ async def register(request: Request, user_in: UserRegister, db: Session = Depend
 @limiter.limit("10/minute")
 async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     logger.info(f"Login attempt for: {form_data.username}")
-    # 预置管理员逻辑
-    if form_data.username == "admin@example.com":
-        admin = db.query(UserAccount).filter(UserAccount.email == "admin@example.com").first()
-        if not admin:
-            # 首次运行创建管理员
-            admin = UserAccount(
-                user_id="admin",
-                email="admin@example.com",
-                hashed_password=get_password_hash("Admin123!@#456"), # 32位随机初始密码演示
-                role=UserRole.ADMIN,
-                balance=9999.0
-            )
-            db.add(admin)
-            db.commit()
-            db.refresh(admin)
-            
+    
+    # 检查是否为配置的超级管理员
     user = db.query(UserAccount).filter(UserAccount.email == form_data.username).first()
+    
+    # 如果是超级管理员邮箱且用户不存在，自动初始化（仅在首次登录时）
+    if form_data.username == settings.SUPER_ADMIN_EMAIL and not user:
+        logger.info(f"Initializing super admin: {settings.SUPER_ADMIN_EMAIL}")
+        user = UserAccount(
+            user_id="admin",
+            email=settings.SUPER_ADMIN_EMAIL,
+            hashed_password=get_password_hash("Admin123!@#"), # 初始默认密码，建议通过 DB 修改
+            role=UserRole.ADMIN,
+            balance=99999.0
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
