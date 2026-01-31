@@ -11,7 +11,7 @@ class ExecutionStatus(PyEnum):
     SUCCESS = "SUCCESS"
     FAIL = "FAIL"
 
-# --- Infrastructure Models (Inspired by mature systems) ---
+# --- Infrastructure Models ---
 
 class AgentExecution(Base):
     __tablename__ = "agent_executions"
@@ -39,65 +39,60 @@ class ActionTrace(Base):
     finished_at = Column(DateTime)
     execution = relationship("AgentExecution", back_populates="actions")
 
-# --- Education Vertical Models (New) ---
+# --- Art Studio Collaboration Models (New) ---
 
-class Student(Base):
+class ArtProject(Base):
     """
-    用户画像系统：记录学习行为与核心能力维度
+    艺术项目：多个 Agent 协作的载体
     """
-    __tablename__ = "students"
+    __tablename__ = "art_projects"
     id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    grade = Column(String(20), nullable=False) # e.g., "Grade 7"
+    title = Column(String(200), nullable=False)
+    description = Column(Text)
+    status = Column(String(50), default="concept") # concept, creation, review, finished
     
-    # 个人学习力评估 (注意力/记忆力/逻辑力)
-    attention_score = Column(Float, default=0.0)
-    memory_score = Column(Float, default=0.0)
-    logic_score = Column(Float, default=0.0)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, onupdate=lambda: datetime.now(timezone.utc))
     
-    mastery_records = relationship("MasteryMatrix", back_populates="student")
-    error_logs = relationship("ErrorLog", back_populates="student")
+    sessions = relationship("ArtSession", back_populates="project")
 
-class KnowledgePoint(Base):
+class ArtSession(Base):
     """
-    教材知识点图谱：细化到章节级别
+    协作会话：记录 Agent 间的交互与共享上下文
     """
-    __tablename__ = "knowledge_points"
+    __tablename__ = "art_sessions"
     id = Column(Integer, primary_key=True)
-    subject = Column(String(50), nullable=False) # 语数外/理化生...
-    chapter = Column(String(200)) # 章节名称
-    title = Column(String(200), nullable=False) # 知识点名称
-    content = Column(Text) # 核心定义/公式
-    difficulty_level = Column(Integer, default=1) # 1-5
-
-class MasteryMatrix(Base):
-    """
-    知识点掌握度矩阵：实时更新
-    """
-    __tablename__ = "mastery_matrix"
-    id = Column(Integer, primary_key=True)
-    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
-    kp_id = Column(Integer, ForeignKey("knowledge_points.id"), nullable=False)
-    mastery_level = Column(Float, default=0.0) # 0.0 - 1.0
-    last_updated = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    project_id = Column(Integer, ForeignKey("art_projects.id"), nullable=False)
     
-    student = relationship("Student", back_populates="mastery_records")
-    kp = relationship("KnowledgePoint")
-
-class ErrorLog(Base):
-    """
-    错题关联的知识漏洞追踪
-    """
-    __tablename__ = "error_logs"
-    id = Column(Integer, primary_key=True)
-    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
-    kp_id = Column(Integer, ForeignKey("knowledge_points.id"), nullable=False)
+    shared_context = Column(JSON) # 存储当前画布状态、配色方案等
+    interaction_history = Column(JSON) # 记录 Agent 间的对话
     
-    error_type = Column(String(50)) # 计算错误/逻辑错误/知识模糊
-    wrong_answer = Column(Text)
-    correct_answer = Column(Text)
-    context = Column(Text) # 题目背景
+    project = relationship("ArtProject", back_populates="sessions")
+    agent_logs = relationship("AgentCollabLog", back_populates="session")
+
+class AgentRole(PyEnum):
+    STUDENT = "student"
+    TUTOR = "tutor"
+    ARTIST = "artist"
+    CRITIC = "critic"
+
+class AgentCollabLog(Base):
+    """
+    Agent 协作日志：记录自主交互行为
+    """
+    __tablename__ = "agent_collab_logs"
+    id = Column(Integer, primary_key=True)
+    session_id = Column(Integer, ForeignKey("art_sessions.id"), nullable=False)
+    
+    from_agent = Column(String(100)) # Agent 标识
+    from_role = Column(Enum(AgentRole))
+    to_agent = Column(String(100))
+    to_role = Column(Enum(AgentRole))
+    
+    action_type = Column(String(50)) # e.g., "request_feedback", "handoff_canvas", "propose_style"
+    content = Column(Text)
+    payload = Column(JSON)
+    
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
-    student = relationship("Student", back_populates="error_logs")
-    kp = relationship("KnowledgePoint")
+    session = relationship("ArtSession", back_populates="agent_logs")

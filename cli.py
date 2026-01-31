@@ -20,8 +20,8 @@ from datetime import datetime
 # Initialize Rich Console and Typer
 console = Console()
 app = typer.Typer(
-    name="edusense",
-    help="EduSense AI 教育垂直网关 - 智能教学助手控制台",
+    name="artfish",
+    help="Artfish Studio - 艺术教育多智能体协作平台控制台",
     add_completion=True,
 )
 
@@ -295,10 +295,10 @@ def backup():
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):
-    """EduSense 教育垂直网关"""
+    """Artfish Studio 艺术教育协作网关"""
     if ctx.invoked_subcommand is None:
         console.print(Panel(
-            "[bold white]EduSense AI Gateway 🎓[/bold white]\n[dim]K12 垂直场景智能教学执行中枢[/dim]",
+            "[bold white]Artfish Studio 🎨 🦞[/bold white]\n[dim]艺术教育多智能体协作执行中枢[/dim]",
             border_style="indigo",
             expand=False
         ))
@@ -306,17 +306,17 @@ def main(ctx: typer.Context):
         choice = questionary.select(
             "请选择操作:",
             choices=[
-                "1. Tutor Assistant (智能助教)",
-                "2. Student Analytics (学情分析)",
-                "3. System Diagnosis (环境诊断)",
-                "4. Configuration (教学参数配置)",
+                "1. Studio Assistant (创作助教)",
+                "2. Project Analytics (项目分析)",
+                "3. System Diagnosis (系统诊断)",
+                "4. Configuration (配置管理)",
                 "5. Exit (退出)"
             ],
             use_shortcuts=True
         ).ask()
 
-        if "Tutor" in choice:
-            console.print("[yellow]进入助教模式...[/yellow]")
+        if "Studio" in choice:
+            console.print("[yellow]进入创作室模式...[/yellow]")
         elif "Analytics" in choice:
             ctx.invoke(status)
         elif "Diagnosis" in choice:
@@ -324,7 +324,7 @@ def main(ctx: typer.Context):
         elif "Configuration" in choice:
             ctx.invoke(config)
         else:
-            console.print("[dim]祝您教学愉快！再见。[/dim]")
+            console.print("[dim]祝您创作愉快！再见。[/dim]")
 
 if __name__ == "__main__":
     app()

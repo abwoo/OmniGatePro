@@ -4,12 +4,12 @@ import os
 
 class Settings(BaseSettings):
     # Basic Config
-    APP_NAME: str = "edusense-gateway"
+    APP_NAME: str = "artfish-studio"
     DEBUG: bool = True
-    VERSION: str = "1.0.0"
+    VERSION: str = "2.0.0"
     
     # Database Config
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./edusense.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./artfish_studio.db")
     
     # Telegram Config
     TELEGRAM_BOT_TOKEN: Optional[str] = os.getenv("TELEGRAM_BOT_TOKEN")

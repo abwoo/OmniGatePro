@@ -1,12 +1,14 @@
 import logging
 import asyncio
-from typing import Optional
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+import json
+from typing import Optional, Dict, Any
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     MessageHandler,
     ContextTypes,
+    CallbackQueryHandler,
     filters,
 )
 from core.config import settings
@@ -18,11 +20,11 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("artfish.studio.bot")
 
-class EduSenseBot:
+class ArtfishStudioBot:
     """
-    EduSense Telegram Bot: 基于 Gateway 的教育垂直场景机器人
+    Artfish Studio Telegram Bot: 支持多 Agent 协作的艺术教育机器人
     """
     def __init__(self, token: str):
         self.token = token
@@ -33,10 +35,12 @@ class EduSenseBot:
     def _setup_handlers(self):
         """配置指令与消息处理器"""
         self.app.add_handler(CommandHandler("start", self.start_command))
-        self.app.add_handler(CommandHandler("help", self.help_command))
         self.app.add_handler(CommandHandler("tutor", self.tutor_command))
-        self.app.add_handler(CommandHandler("exam", self.exam_command))
-        self.app.add_handler(CommandHandler("writing", self.writing_command))
+        self.app.add_handler(CommandHandler("critique", self.critique_command))
+        self.app.add_handler(CommandHandler("collaborate", self.collaborate_command))
+        
+        # 处理回调查询（按钮点击）
+        self.app.add_handler(CallbackQueryHandler(self.button_callback))
         
         # 处理普通文本消息
         self.app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), self.handle_message))
@@ -45,138 +49,95 @@ class EduSenseBot:
         """处理 /start 指令"""
         user = update.effective_user
         welcome_msg = (
-            f"你好 {user.first_name}！🎓 我是 EduSense AI 助教。\n\n"
-            "我可以为你提供以下服务：\n"
-            "1. 💡 /tutor <问题> - 启发式学科辅导\n"
-            "2. 📝 /exam <知识点> - 智能测评练习\n"
-            "3. ✍️ /writing <内容> - 作文智能批改\n\n"
-            "请直接发送你的问题或使用指令开始学习！"
+            f"🎨 你好 {user.first_name}！欢迎来到 Artfish Studio 艺术创作室。\n\n"
+            "我是一个支持多智能体协作的艺术助教，你可以：\n"
+            "1. 💡 /tutor <概念> - 学习色彩理论或构图法则\n"
+            "2. 🔍 /critique <构思> - 获取专业审美点评\n"
+            "3. 🤝 /collaborate - 开启多 Agent 协同创作模式\n\n"
+            "在这里，你的 AI Agent 可以与其他专家 Agent 共同完成艺术挑战！"
         )
         await update.message.reply_text(welcome_msg)
 
-    async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /help 指令"""
-        help_text = (
-            "📖 EduSense 使用指南：\n\n"
-            "• 直接发送数学题或学科名词进行辅导。\n"
-            "• 使用 /exam 勾股定理 进行针对性练习。\n"
-            "• 使用 /writing <作文内容> 获取批改建议。\n\n"
-            "如有疑问，请随时咨询。"
-        )
-        await update.message.reply_text(help_text)
-
     async def tutor_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /tutor 指令"""
-        query = " ".join(context.args)
-        if not query:
-            await update.message.reply_text("请输入你想了解的知识点，例如：/tutor 勾股定理")
-            return
-        
-        await self._process_edu_task(update, "tutor", query)
+        """艺术理论辅导"""
+        concept = " ".join(context.args) or "色彩理论"
+        await self._execute_art_task(update, "art_tutor", "get_theory", concept=concept)
 
-    async def exam_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /exam 指令"""
-        kp = " ".join(context.args)
-        if not kp:
-            await update.message.reply_text("请输入知识点名称，例如：/exam 拟人")
+    async def critique_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """作品点评"""
+        description = " ".join(context.args)
+        if not description:
+            await update.message.reply_text("请在指令后输入你的作品构思或描述，例如：/critique 晨曦中的森林")
             return
-        
-        await self._process_edu_task(update, "exam", kp)
+        await self._execute_art_task(update, "art_critique", "critique_concept", description=description)
 
-    async def writing_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理 /writing 指令"""
-        content = " ".join(context.args)
-        if not content:
-            await update.message.reply_text("请在指令后输入作文内容。")
-            return
+    async def collaborate_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """开启多 Agent 协作"""
+        keyboard = [
+            [
+                InlineKeyboardButton("🎨 邀请创作 Agent", callback_query_data="invite_artist"),
+                InlineKeyboardButton("🧐 邀请评审 Agent", callback_query_data="invite_critic"),
+            ],
+            [InlineKeyboardButton("✅ 提交至工作台", callback_query_data="submit_project")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("🚀 已开启多智能体协同模式。请选择要加入项目的 Agent 角色：", reply_markup=reply_markup)
+
+    async def button_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """处理按钮点击"""
+        query = update.callback_query
+        await query.answer()
         
-        await self._process_edu_task(update, "writing", content)
+        if query.data == "invite_artist":
+            await query.edit_message_text("✅ 创作 Agent [Artist-Bot] 已加入项目。它将负责风格实现。")
+        elif query.data == "invite_critic":
+            await query.edit_message_text("✅ 评审 Agent [Critic-Bot] 已加入项目。它将负责审美把关。")
+        elif query.data == "submit_project":
+            await query.edit_message_text("🌟 项目已提交至 Artfish 工作台！多 Agent 协作流正在启动...")
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """处理普通文本消息，自动路由"""
+        """普通消息路由"""
         text = update.message.text
-        # 默认使用智能助教模式
-        await self._process_edu_task(update, "tutor", text)
+        # 默认路由到导师技能
+        await self._execute_art_task(update, "art_tutor", "get_theory", concept=text)
 
-    async def _process_edu_task(self, update: Update, mode: str, content: str):
-        """统一调用 Gateway 处理教学任务"""
+    async def _execute_art_task(self, update: Update, skill: str, tool: str, **kwargs):
+        """执行艺术任务并反馈"""
         try:
-            # 发送正在思考的状态
             await update.message.reply_chat_action("typing")
             
-            # 构建意图
-            intent = ArtIntent(
-                goals=[content],
-                constraints={"style": "educational", "mode": mode}
-            )
-            
-            # 执行
-            # 注意：由于 Gateway 可能是同步的，在生产环境建议放入线程池
-            loop = asyncio.get_event_loop()
-            trace = await loop.run_in_executor(None, self.gateway.execute_intent, intent)
+            # 直接通过 Gateway 的 SkillManager 执行（多 Agent 协作的基础）
+            result = self.gateway.skill_manager.execute(skill, tool, **kwargs)
             
             # 格式化回复
-            response = self._format_response(trace, mode)
+            response = self._format_studio_response(skill, tool, result)
             await update.message.reply_text(response, parse_mode='Markdown')
             
         except Exception as e:
-            logger.error(f"Error processing TG task: {e}")
-            await update.message.reply_text(f"抱歉，处理您的请求时出现错误：{str(e)}")
+            logger.error(f"Studio Bot Error: {e}")
+            await update.message.reply_text(f"❌ 协作过程中出现小插曲：{str(e)}")
 
-    def _format_response(self, trace, mode: str) -> str:
-        """将执行轨迹格式化为友好的用户回复"""
-        results = trace.get_all_results()
-        
-        if mode == "tutor":
-            # 查找启发式回答
-            for action_id, result in results.items():
-                if "heuristic_tutor" in action_id:
-                    return f"💡 *EduSense 启发式引导：*\n\n{result}"
-            return "未能找到相关的辅导信息。"
-            
-        elif mode == "exam":
-            for action_id, result in results.items():
-                if "generate_quiz" in action_id:
-                    q = result.get("question", {})
-                    return (
-                        f"📝 *针对性练习题：*\n\n"
-                        f"{q.get('q', '暂无题目')}\n\n"
-                        f"🏷️ 标签: {', '.join(q.get('tags', []))}\n"
-                        f"⭐ 难度: {q.get('level', 1)}"
-                    )
-            return "未能生成练习题。"
-            
-        elif mode == "writing":
-            rhetoric = {}
-            suggestion = ""
-            for action_id, result in results.items():
-                if "detect_rhetoric" in action_id:
-                    rhetoric = result
-                if "evaluate_structure" in action_id:
-                    suggestion = result.get("suggestion", "")
-            
-            resp = "✍️ *作文批改建议：*\n\n"
-            if rhetoric:
-                resp += "*修辞识别：*\n"
-                for style, matches in rhetoric.items():
-                    resp += f"- {style}: {', '.join(matches)}\n"
-                resp += "\n"
-            
-            if suggestion:
-                resp += f"*结构评价：*\n{suggestion}"
-                
-            return resp
-            
-        return "任务已完成。"
+    def _format_studio_response(self, skill: str, tool: str, result: Any) -> str:
+        """针对艺术场景格式化回复"""
+        if skill == "art_tutor":
+            return f"💡 *艺术导师建议：*\n\n{result}"
+        elif skill == "art_critique":
+            res = result
+            return (
+                f"🧐 *专业评审报告：*\n\n"
+                f"📊 综合评分: {res['overall_score']:.1f}\n"
+                f"📝 详细反馈: {res['expert_feedback']}\n"
+                f"💡 改进方向: {res['improvement_tip']}"
+            )
+        return f"✅ 任务执行成功：\n{json.dumps(result, indent=2, ensure_ascii=False)}"
 
     def run(self):
         """启动机器人"""
-        logger.info("EduSense Telegram Bot is starting...")
+        logger.info("Artfish Studio Bot is starting...")
         self.app.run_polling()
 
 if __name__ == "__main__":
-    if not settings.TELEGRAM_BOT_TOKEN:
-        print("Error: TELEGRAM_BOT_TOKEN not set in .env")
-    else:
-        bot = EduSenseBot(settings.TELEGRAM_BOT_TOKEN)
-        bot.run()
+    # 使用提供的 Token
+    TOKEN = "8434211814:AAFUTWoELMEIio7O8zkKo9siFp233MUQt2A"
+    bot = ArtfishStudioBot(TOKEN)
+    bot.run()
