@@ -177,22 +177,50 @@ def get_db():
 
 # 安全配置
 API_KEY_NAME = "X-API-Key"
+GUEST_ID_NAME = "X-Guest-ID"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+guest_id_header = APIKeyHeader(name=GUEST_ID_NAME, auto_error=False)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="v1/auth/token", auto_error=False)
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     api_key: str = Security(api_key_header),
-    token_query: Optional[str] = None, # 增加从 Query 参数获取 Token 的支持
+    guest_id: str = Security(guest_id_header),
+    token_query: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    # 1. 优先支持 API Key (用于开发者/机器人)
+    # 1. 优先支持 API Key
     if api_key:
         user = db.query(UserAccount).filter(UserAccount.api_key_hash == api_key).first()
         if user and user.is_active:
             return user
 
-    # 2. 其次支持 JWT Token (Authorization Header 或 Query Parameter)
+    # 2. 支持 Guest ID (匿名付费模式核心)
+    if guest_id:
+        user = db.query(UserAccount).filter(UserAccount.user_id == guest_id).first()
+        if not user:
+            # 自动创建匿名账户
+            logger.info(f"Creating auto-account for Guest: {guest_id}")
+            user = UserAccount(
+                user_id=guest_id,
+                email=f"guest_{guest_id[:8]}@artfish.ai",
+                balance=1.0, # 初始赠送 1 USD 体验金
+                role=UserRole.USER,
+                is_active=1
+            )
+            # 如果 Guest ID 匹配配置的管理员邮箱（作为特殊 Key），授予管理员权限
+            if guest_id == settings.SUPER_ADMIN_EMAIL:
+                user.role = UserRole.ADMIN
+                user.balance = 99999.0
+                
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        
+        if user.is_active:
+            return user
+
+    # 3. 兼容 JWT Token
     final_token = token or token_query
     if final_token:
         try:

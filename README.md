@@ -29,8 +29,8 @@
 您可以直接访问部署在 GitHub Pages 上的 Web 版本进行体验：
 👉 **[Artfish AI Platform 在线演示](https://abwoo.github.io/artfish-ai-platform/)**
 
-> **提示**：Web 版本是一个客户端演示。如果您在本地运行后端 (`python api/main.py`)，请在登录页面的 **API Config** 中确保地址设置为 `http://localhost:8000`。
-> **权限说明**：普通用户注册后拥有基础权限。管理员权限（Admin Console）仅限系统创建者使用。
+> **模式说明**：本平台采用 **Frictionless (无感) 商业化模式**。您无需注册登录，访问即自动获得一个唯一的 **Guest ID** 并赠送 $1.00 体验金。
+> **余额保留**：您的余额绑定在浏览器本地。如果您更换设备，请在个人资料中复制您的 **Pass ID**。
 
 ### 环境要求
 *   Python 3.10+
@@ -87,9 +87,9 @@ artfish/
 ## 7. 管理员配置 (Creator Only)
 
 如果您是项目的创建者并希望进入管理后台：
-1.  在本地创建 `.env` 文件（或修改系统环境变量）。
-2.  设置 `SUPER_ADMIN_EMAIL=your-email@example.com`。
-3.  启动后端后，使用该邮箱进行登录。系统会自动识别并赋予 `ADMIN` 权限（初始密码默认为 `Admin123!@#`）。
+1.  在本地 `.env` 文件中设置 `SUPER_ADMIN_EMAIL=your-secret-admin-key`。
+2.  在前端页面中，手动将浏览器的 `localStorage.getItem('artfish_guest_id')` 设置为该 key。
+3.  刷新页面，系统将自动识别并赋予 `ADMIN` 权限。
 
 ---
 

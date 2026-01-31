@@ -21,12 +21,15 @@ import {
   User,
   Activity,
   Box,
-  Terminal
+  Terminal,
+  Key,
+  Copy,
+  Check
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import api from './utils/api';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Execution {
   run_id: string;
@@ -48,7 +51,6 @@ interface UserInfo {
 
 function App() {
   const { t, i18n } = useTranslation();
-  const [token, setToken] = useState<string | null>(localStorage.getItem('artfish_token'));
   const [activeTab, setActiveTab] = useState('execute');
   const [isAdminView, setIsAdminView] = useState(false);
   const [goals, setGoals] = useState('');
@@ -59,17 +61,23 @@ function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isTopupOpen, setIsTopupOpen] = useState(false);
   const [topupAmount, setTopupAmount] = useState('10');
+  const [copied, setCopied] = useState(false);
+
+  // 初始化 Guest ID (商业化：无感登录核心)
+  useEffect(() => {
+    let guestId = localStorage.getItem('artfish_guest_id');
+    if (!guestId) {
+      guestId = 'guest_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('artfish_guest_id', guestId);
+    }
+  }, []);
 
   const fetchUserInfo = async () => {
-    if (!token) return;
     try {
       const res = await api.get('/v1/user/me');
       setUserInfo(res.data);
     } catch (err: any) {
       console.error("Failed to fetch user info", err);
-      if (err.response?.status === 401) {
-        handleLogout();
-      }
     }
   };
 
@@ -77,25 +85,21 @@ function App() {
     const init = async () => {
       try {
         await api.get('/health');
-        if (token) {
-          await fetchUserInfo();
-        }
+        await fetchUserInfo();
       } catch (err) {
         console.error("Initialization failed", err);
       }
     };
     init();
-  }, [token]);
-
-  const handleLogin = (newToken: string) => {
-    setToken(newToken);
-    localStorage.setItem('artfish_token', newToken);
-  };
+  }, []);
 
   const handleLogout = () => {
-    setToken(null);
-    setUserInfo(null);
-    localStorage.removeItem('artfish_token');
+    // 在匿名模式下，登出意味着重置 ID (清除钱包)
+    if (window.confirm("Warning: Logging out will discard your current Guest ID and Balance. Continue?")) {
+      localStorage.removeItem('artfish_guest_id');
+      localStorage.removeItem('artfish_token');
+      window.location.reload();
+    }
   };
 
   const handleSubmit = async () => {
@@ -148,7 +152,7 @@ function App() {
   };
 
   const downloadReport = (run_id: string) => {
-    window.open(`http://localhost:8000/v1/execution/${run_id}/report?type=pdf&token=${token}`, '_blank');
+    window.open(`http://localhost:8000/v1/execution/${run_id}/report?type=pdf`, '_blank');
   };
 
   const handleTopup = async () => {
@@ -162,12 +166,8 @@ function App() {
     }
   };
 
-  if (!token) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
-
   if (isAdminView && userInfo?.role === 'admin') {
-    return <AdminPage token={token} onBack={() => setIsAdminView(false)} />;
+    return <AdminPage onBack={() => setIsAdminView(false)} />;
   }
 
   return (
@@ -234,12 +234,19 @@ function App() {
                       </div>
                       <div className="p-2 space-y-1">
                         <div className="px-3 py-2">
-                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">API Credentials</p>
-                           <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex items-center justify-between group cursor-pointer hover:border-gray-200 transition-colors">
+                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">My Pass ID (Backup this)</p>
+                           <div 
+                             onClick={() => {
+                               navigator.clipboard.writeText(userInfo?.user_id || '');
+                               setCopied(true);
+                               setTimeout(() => setCopied(false), 2000);
+                             }}
+                             className="bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex items-center justify-between group cursor-pointer hover:border-blue-200 transition-colors"
+                           >
                              <code className="text-[10px] font-mono text-gray-600 truncate max-w-[180px]">
-                               {userInfo?.api_key}
+                               {userInfo?.user_id}
                              </code>
-                             <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                             {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-gray-300 group-hover:text-blue-500" />}
                            </div>
                         </div>
                         

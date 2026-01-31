@@ -27,6 +27,12 @@ api.interceptors.request.use((config) => {
     config.headers['X-CSRF-Token'] = csrfToken;
   }
 
+  // 从 LocalStorage 获取 Guest ID
+  const guestId = localStorage.getItem('artfish_guest_id');
+  if (guestId) {
+    config.headers['X-Guest-ID'] = guestId;
+  }
+
   // 从 LocalStorage 获取 JWT Token
   const token = localStorage.getItem('artfish_token');
   if (token) {

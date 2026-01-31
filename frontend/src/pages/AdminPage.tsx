@@ -37,11 +37,10 @@ interface AdminStats {
 }
 
 interface AdminPageProps {
-  token: string;
   onBack: () => void;
 }
 
-const AdminPage: React.FC<AdminPageProps> = ({ token, onBack }) => {
+const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -128,7 +127,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ token, onBack }) => {
   };
 
   const exportCSV = () => {
-    window.open(`http://localhost:8000/v1/admin/users/export?token=${token}`, '_blank');
+    window.open(`http://localhost:8000/v1/admin/users/export`, '_blank');
   };
 
   if (loading && page === 1) {
