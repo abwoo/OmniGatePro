@@ -96,41 +96,6 @@ class ArtfishStudioBot:
         # 默认触发讨论室
         await self.collab_command(update, context)
 
-    async def _execute_art_task(self, update: Update, skill: str, tool: str, **kwargs):
-        """执行艺术任务并反馈（非阻塞异步执行）"""
-        try:
-            await update.message.reply_chat_action("typing")
-            
-            # 使用 asyncio.to_thread 防止同步执行阻塞事件循环
-            result = await asyncio.to_thread(
-                self.gateway.skill_manager.execute, 
-                skill, 
-                tool, 
-                **kwargs
-            )
-            
-            # 格式化回复
-            response = self._format_studio_response(skill, tool, result)
-            await update.message.reply_text(response, parse_mode='Markdown')
-            
-        except Exception as e:
-            logger.error(f"Studio Bot Error: {e}")
-            await update.message.reply_text(f"❌ 协作过程中出现小插曲：{str(e)}")
-
-    def _format_studio_response(self, skill: str, tool: str, result: Any) -> str:
-        """针对艺术场景格式化回复"""
-        if skill == "art_tutor":
-            return f"💡 *艺术导师建议：*\n\n{result}"
-        elif skill == "art_critique":
-            res = result
-            return (
-                f"🧐 *专业评审报告：*\n\n"
-                f"📊 综合评分: {res['overall_score']:.1f}\n"
-                f"📝 详细反馈: {res['expert_feedback']}\n"
-                f"💡 改进方向: {res['improvement_tip']}"
-            )
-        return f"✅ 任务执行成功：\n{json.dumps(result, indent=2, ensure_ascii=False)}"
-
     def run(self):
         """启动机器人"""
         logger.info("Artfish Studio Bot is starting...")

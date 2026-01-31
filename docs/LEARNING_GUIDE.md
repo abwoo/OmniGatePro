@@ -1,94 +1,83 @@
 # Artfish Studio Pro 学习与操作手册
 
-欢迎来到 **Artfish Studio Pro**！这是一个基于高度可扩展多智能体 (Multi-Agent) 架构的艺术教育与协作平台。本手册将带你从零开始，一步步掌握系统的核心功能。
+欢迎来到 **Artfish Studio Pro**！这是一个基于高度可扩展多智能体 (Multi-Agent) 架构的艺术教育与协作平台。
+
+为了让你能够顺利掌握系统，我们建议按照以下 **“从本地到云端”** 的顺序逐步操作。
 
 ---
 
-## 🛠️ 第一步：环境初始化
+## 🏗️ 第一阶段：本地环境与核心引擎 (Basics)
 
-在开始任何操作前，我们需要确保系统环境已正确配置。
+在这一阶段，我们不需要任何复杂的外部配置，重点是验证系统的“大脑”是否正常工作。
 
-1.  **安装依赖**：
-    ```powershell
-    pip install -r requirements.txt
-    ```
-2.  **配置 API 密钥**：
-    运行交互式向导，配置你的 AI 模型（推荐优先配置 OpenAI 或 DeepSeek）及其他平台密钥。
+### 1. 环境初始化
+```powershell
+# 安装核心依赖 (已优化，无需 C++ 编译环境)
+pip install -r requirements.txt
+
+# 运行系统自检
+python cli.py doctor
+```
+*如果你看到 `Redis | OFFLINE`，请不要担心，系统会自动切换到本地模拟模式。*
+
+### 2. 验证 API 指针引擎
+Artfish 使用“指针”来调用 API。即使你没有配置真实的 Key，你也可以观察到系统是如何调度这些请求的。
+```powershell
+$env:PYTHONPATH = "."; python demo_api_engine.py
+```
+
+### 3. 体验多 Agent 艺术协作 (核心功能)
+直接在控制台观看专家 Agent 们的灵感碰撞。
+```powershell
+$env:PYTHONPATH = "."; python demo_art_pro.py
+```
+**在这个演示中，你会看到：**
+- **学术辩论**：针对“AI 艺术原创性”的正反方交锋。
+- **互动工坊**：导师与艺术家之间的多轮启发式对话。
+- **协同创作**：从理论到构想的完整工作流。
+
+---
+
+## 🔑 第二阶段：配置与 AI 模型接入 (AI Integration)
+
+当你熟悉了本地流程后，可以开始接入真实的 AI 模型，让 Agent 的回复更加智能。
+
+1.  **获取密钥**：准备好 OpenAI, DeepSeek 或其他厂商的 API Key。
+2.  **配置向导**：
     ```powershell
     python cli.py setup-keys
     ```
-3.  **系统自检**：
-    使用 `doctor` 命令检查核心库、Redis 队列及配置文件的状态。
-    ```powershell
-    python cli.py doctor
-    ```
+    *按照提示输入密钥，系统会自动生成 `.env` 配置文件。*
 
 ---
 
-## 🏗️ 第二步：核心引擎验证 (Pointer Engine)
+## 🤖 第三阶段：多平台接口接入 (Interface)
 
-Artfish Pro 采用了类似于 **Clawdbot** 的指针式调用机制。你可以通过统一的字符串标识符调用不同的 API 适配器。
+最后，你可以将这一套强大的 Agent 系统对接到社交平台。
 
-- **运行演示**：
-    ```powershell
-    python demo_api_engine.py
-    ```
-- **核心逻辑**：
-    - 指针格式：`adapter_name.method_name` (如 `telegram.sendMessage`)。
-    - 优点：解耦业务逻辑与具体平台实现，方便未来接入微信、钉钉等。
-
----
-
-## 🎨 第三步：多 Agent 艺术协作 (Local Collab)
-
-这是系统的灵魂所在。你可以在不启动任何第三方接口的情况下，直接在本地体验专家 Agent 之间的互动。
-
-- **启动本地演示**：
-    ```powershell
-    python demo_art_pro.py
-    ```
-
-### 体验四种协作场景：
-1.  **场景 1：艺术讨论室** - 多个 Agent 围绕你的灵感进行初步交流。
-2.  **场景 2：专家辩论** - 针对具有争议性的艺术话题（如“AI 艺术的原创性”），启动正反方辩论。
-3.  **场景 3：协同创作工作流** - 从理论定调到视觉构思，再到审美优化，Agent 们分工明确。
-4.  **场景 4：艺术互动工坊** - **(新功能)** Agent 之间进行多轮相互启发式对话，产生更深层的艺术见解。
-
----
-
-## 🤖 第四步：接入 Telegram 协作机器人
-
-当你对本地引擎感到满意后，可以开启 Telegram 入口。
-
-1.  **启动机器人**：
+1.  **Telegram 机器人**：
     ```powershell
     python interfaces/telegram_bot.py
     ```
-2.  **核心指令**：
-    - `/start`: 欢迎信息与功能概览。
-    - `/debate <主题>`: 启动 Agent 间的学术辩论。
-    - `/collab <灵感>`: 进入多 Agent 协作讨论。
-    - `/monitor`: 实时监控系统延迟与熔断器状态。
+    - 使用 `/debate` 发起辩论。
+    - 使用 `/collab` 发起协作。
+2.  **飞书推送验证**：
+    ```powershell
+    python demo_feishu.py
+    ```
 
 ---
 
-## 🧩 开发者指南：如何添加新的 Agent？
+## 🧩 进阶：自定义你的 Agent
 
-1.  在 `core/agents/art_agents.py` 中继承 `ArtAgent` 类。
-2.  实现 `process_task` 方法，定义 Agent 的专业逻辑。
-3.  在 `orchestrator` 中注册你的新 Agent。
+你可以通过修改 `core/agents/art_agents.py` 来定义自己的 Agent 角色和性格。系统会自动为你的 Agent 匹配合适的语调和评价维度。
 
 ---
 
-## 📅 更新日志与修复记录
+## �️ 常见问题排查 (Troubleshooting)
 
-- **Bug 修复**:
-    - 解决了 LLM 不可用时直接打印 Python 字典的问题，新增了 `_fallback_format` 逻辑。
-    - 修复了 `rich` 库在某些终端下颜色解析失败的错误。
-    - 增强了测试用例的鲁棒性，确保 CI/CD 流程绿色通过。
-- **新增功能**:
-    - **艺术互动工坊**: 支持 Agent 间多轮循环互动。
-    - **个性化增强**: 改进了 `PersonaEngine`，使回复内容更具情感色彩。
+- **Conflict 错误**：如果你在启动 Telegram 时看到 Conflict，说明后台有残留进程。请运行 `Stop-Process -Name "python" -Force`。
+- **缺失 C++ 编译环境**：我们已经将 gRPC 设为可选，如果安装报错，请检查 `requirements.txt` 中相关行是否已注释。
 
 ---
 **Artfish Studio Pro - 释放 AI 的创意潜能**

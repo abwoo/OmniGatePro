@@ -27,7 +27,12 @@ class ArtAgent(ABC):
 
     async def speak(self, user_id: str, context: str, content: Any) -> str:
         """通过个性化引擎生成发言"""
-        return await persona_engine.generate_response(user_id, context, content, self.memory)
+        response = await persona_engine.generate_response(user_id, context, content, self.memory)
+        # 记录自己的发言到记忆中
+        self.memory.append({"role": "assistant", "content": response})
+        if len(self.memory) > 10: # 保持最近 10 条记忆
+            self.memory.pop(0)
+        return response
 
 class AgentOrchestrator:
     """
