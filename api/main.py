@@ -227,7 +227,7 @@ async def register(request: Request, user_in: UserRegister, db: Session = Depend
     db.refresh(user)
     
     access_token = create_access_token(data={"sub": user.user_id})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer"} # nosec B105
 
 @app.post("/v1/auth/token", response_model=Token)
 @limiter.limit("10/minute")
@@ -240,7 +240,7 @@ async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequ
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = create_access_token(data={"sub": user.user_id})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer"} # nosec B105
 
 @app.get("/health")
 async def health_check():
@@ -354,4 +354,5 @@ async def create_alipay_order(amount: float, user: UserAccount = Depends(get_cur
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # 生产环境建议通过环境变量配置 HOST
+    uvicorn.run(app, host=os.getenv("HOST", "0.0.0.0"), port=8000) # nosec B104

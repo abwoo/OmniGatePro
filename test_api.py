@@ -7,7 +7,7 @@ API_KEY = "sk-artfish-test-key"
 
 def test_health():
     print("Checking health...")
-    resp = requests.get(f"{BASE_URL}/health")
+    resp = requests.get(f"{BASE_URL}/health", timeout=10)
     print(f"Health: {resp.json()}")
 
 def test_execution():
@@ -20,7 +20,7 @@ def test_execution():
     }
     headers = {"X-API-Key": API_KEY}
     
-    resp = requests.post(f"{BASE_URL}/v1/execute", json=payload, headers=headers)
+    resp = requests.post(f"{BASE_URL}/v1/execute", json=payload, headers=headers, timeout=10)
     if resp.status_code != 200:
         print(f"Error: {resp.text}")
         return
@@ -32,7 +32,7 @@ def test_execution():
     # 轮询状态
     for _ in range(10):
         time.sleep(1)
-        status_resp = requests.get(f"{BASE_URL}/v1/execution/{run_id}", headers=headers)
+        status_resp = requests.get(f"{BASE_URL}/v1/execution/{run_id}", headers=headers, timeout=10)
         status_data = status_resp.json()
         print(f"Current Status: {status_data['status']} | Cost: {status_data['total_cost']}")
         
@@ -41,7 +41,7 @@ def test_execution():
             
     if status_data["status"] == "SUCCESS":
         print("\nDownloading report...")
-        report_resp = requests.get(f"{BASE_URL}/v1/execution/{run_id}/report", headers=headers)
+        report_resp = requests.get(f"{BASE_URL}/v1/execution/{run_id}/report", headers=headers, timeout=10)
         with open(f"test_report_{run_id}.pdf", "wb") as f:
             f.write(report_resp.content)
         print(f"Report saved as test_report_{run_id}.pdf")

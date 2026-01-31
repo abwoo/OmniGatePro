@@ -83,9 +83,9 @@ def run_agent_task_celery(self, run_id: str, intent_data: dict):
             if execution:
                 execution.status = ExecutionStatus.FAIL
                 db.commit()
-        except Exception:
-            pass
-        # 抛出异常让 Celery 处理重试
+        except Exception as e:
+            logger.error(f"Failed to record error status in DB: {e}")
+            # 即使数据库更新失败，也要让 Celery 知道任务失败了
         raise self.retry(exc=e, countdown=60)
     finally:
         db.close()

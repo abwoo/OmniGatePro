@@ -1,5 +1,5 @@
 import time
-import random
+import secrets
 from typing import Any
 from interfaces.backend import BackendAdapter, BackendResponse, BackendUsage
 from core.plan import AtomicAction
@@ -22,7 +22,7 @@ class MockBackend(BackendAdapter):
         completion_tokens = len(output) // 4
         
         # 基础成本 + 随机波动
-        cost = settings.DEFAULT_COST_PER_ACTION + (random.random() * 0.005)
+        cost = settings.DEFAULT_COST_PER_ACTION + (secrets.SystemRandom().random() * 0.005)
         
         usage = BackendUsage(
             prompt_tokens=prompt_tokens,
