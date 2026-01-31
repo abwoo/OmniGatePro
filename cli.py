@@ -57,8 +57,8 @@ def get_git_revision_hash() -> str:
 
 @app.command()
 def doctor():
-    """环境诊断：检查教学系统运行环境"""
-    console.print(Panel("[bold cyan]EduSense System Diagnosis[/bold cyan]"))
+    """环境诊断：检查系统运行环境与 API 连通性"""
+    console.print(Panel("[bold cyan]Artfish Studio Pro System Diagnosis[/bold cyan]"))
     
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Component", style="dim")
@@ -69,30 +69,27 @@ def doctor():
     py_ver = platform.python_version()
     table.add_row("Python Runtime", "[green]OK[/green]", f"v{py_ver}")
 
-    # OS
-    table.add_row("Operating System", "[green]OK[/green]", f"{platform.system()} {platform.release()}")
-
-    # Server Connection
-    if check_server_silent():
-        table.add_row("API Server", "[green]ONLINE[/green]", API_URL)
-    else:
-        table.add_row("API Server", "[red]OFFLINE[/red]", f"Cannot connect to {API_URL}")
-
     # Core Libraries
     try:
-        import fastapi, sqlalchemy, celery, rich
-        table.add_row("Core Libraries", "[green]OK[/green]", "All dependencies found")
+        import fastapi, sqlalchemy, redis, grpc, bs4
+        table.add_row("Core Libraries", "[green]OK[/green]", "FastAPI, SQLAlchemy, Redis, gRPC, BeautifulSoup")
     except ImportError as e:
         table.add_row("Core Libraries", "[red]MISSING[/red]", str(e))
 
-    # File Permissions (Linux/Mac only check for simplicity)
-    if platform.system() != "Windows":
-        if os.path.exists(".env"):
-            mode = oct(os.stat(".env").st_mode & 0o777)
-            if mode == '0o600':
-                table.add_row("Security (.env)", "[green]OK[/green]", mode)
-            else:
-                table.add_row("Security (.env)", "[yellow]WARN[/yellow]", f"Mode {mode} too open (Expect 0o600)")
+    # Redis Check
+    try:
+        import redis
+        r = redis.Redis(host='localhost', port=6379, socket_connect_timeout=1)
+        r.ping()
+        table.add_row("Redis Queue", "[green]ONLINE[/green]", "localhost:6379")
+    except:
+        table.add_row("Redis Queue", "[yellow]OFFLINE[/yellow]", "Task queue will run in simulation mode")
+
+    # .env Check
+    if os.path.exists(".env"):
+        table.add_row("Config File (.env)", "[green]FOUND[/green]", "Environment variables loaded")
+    else:
+        table.add_row("Config File (.env)", "[red]MISSING[/red]", "Run 'setup-keys' to create one")
 
     console.print(table)
 
@@ -251,6 +248,35 @@ def benchmark(
     table.add_row("P99 Latency", f"{p99:.2f}ms")
     table.add_row("Avg Latency", f"{sum(latencies)/len(latencies):.2f}ms")
     console.print(table)
+
+@app.command()
+def setup_keys():
+    """密钥配置：交互式配置 Telegram, 飞书及 AI 模型密钥"""
+    console.print(Panel("[bold green]API Key Setup Wizard[/bold green]"))
+    
+    keys = {
+        "TELEGRAM_BOT_TOKEN": "Telegram Bot Token",
+        "FEISHU_APP_ID": "Feishu App ID",
+        "FEISHU_APP_SECRET": "Feishu App Secret",
+        "OPENAI_API_KEY": "OpenAI API Key",
+        "CLAUDE_API_KEY": "Claude API Key",
+        "DEEPSEEK_API_KEY": "DeepSeek API Key"
+    }
+    
+    updates = {}
+    for env_var, label in keys.items():
+        val = questionary.text(f"Enter {label}:").ask()
+        if val:
+            updates[env_var] = val
+            
+    if updates:
+        # 写入 .env 文件
+        with open(".env", "a") as f:
+            for k, v in updates.items():
+                f.write(f"{k}={v}\n")
+        console.print("[bold green]Success![/bold green] Keys saved to .env")
+    else:
+        console.print("[yellow]No changes made.[/yellow]")
 
 @app.command()
 def config():

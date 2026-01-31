@@ -1,0 +1,37 @@
+# Artfish Studio Pro Docker 部署配置
+
+version: '3.8'
+
+services:
+  # 编排网关
+  gateway:
+    build: .
+    command: python interfaces/telegram_bot.py
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    networks:
+      - artfish-net
+
+  # 任务队列
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - artfish-net
+
+  # Agent 节点示例 (可水平扩展)
+  tutor-agent:
+    build: .
+    command: python -m core.agents.art_agents
+    environment:
+      - AGENT_ROLE=tutor
+    networks:
+      - artfish-net
+
+networks:
+  artfish-net:
+    driver: bridge

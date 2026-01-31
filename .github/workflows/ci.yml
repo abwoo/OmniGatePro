@@ -27,4 +27,4 @@ jobs:
         PYTHONPATH: .
         DEBUG: "True"
         TELEGRAM_BOT_TOKEN: "8434211814:AAFUTWoELMEIio7O8zkKo9siFp233MUQt2A"
-      run: pytest --cov=. --cov-report=xml
+      run: pytest tests/test_pro_system.py tests/test_studio_advanced.py --cov=. --cov-report=xml

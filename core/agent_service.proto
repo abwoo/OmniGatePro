@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package artfish.pro;
+
+// Agent 协作服务定义
+service AgentService {
+  // 跨服务任务处理
+  rpc ProcessTask (TaskRequest) returns (TaskResponse);
+  
+  // Agent 间对话/辩论
+  rpc Communicate (MessageRequest) returns (MessageResponse);
+}
+
+message TaskRequest {
+  string task_id = 1;
+  string agent_name = 2;
+  string payload = 3; // JSON string
+}
+
+message TaskResponse {
+  string status = 1;
+  string result = 2; // JSON string
+}
+
+message MessageRequest {
+  string from_agent = 1;
+  string to_agent = 2;
+  string content = 3;
+}
+
+message MessageResponse {
+  string reply = 1;
+}

@@ -22,8 +22,17 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     CLAUDE_API_KEY: Optional[str] = os.getenv("CLAUDE_API_KEY")
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+    DEEPSEEK_API_KEY: Optional[str] = os.getenv("DEEPSEEK_API_KEY")
     WENXIN_API_KEY: Optional[str] = os.getenv("WENXIN_API_KEY")
     QWEN_API_KEY: Optional[str] = os.getenv("QWEN_API_KEY")
+    
+    # Feishu (Lark) Config
+    FEISHU_APP_ID: Optional[str] = os.getenv("FEISHU_APP_ID")
+    FEISHU_APP_SECRET: Optional[str] = os.getenv("FEISHU_APP_SECRET")
+
+    # Other API Configs
+    DISCORD_WEBHOOK_URL: Optional[str] = os.getenv("DISCORD_WEBHOOK_URL")
+    SLACK_BOT_TOKEN: Optional[str] = os.getenv("SLACK_BOT_TOKEN")
     
     # Execution Config
     # Set to True to run tasks synchronously without Redis (Recommended for local dev)
