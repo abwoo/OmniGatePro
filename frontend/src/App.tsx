@@ -166,24 +166,26 @@ function App() {
   return (
     <div className="min-h-screen w-full flex flex-col bg-gray-50/50">
       {/* Version Debug Tag - To ensure user sees the update */}
-      <div className="fixed bottom-4 right-4 z-[999] bg-black/80 text-white text-[10px] px-2 py-1 rounded-md pointer-events-none font-mono">
+      {/* <div className="fixed bottom-4 right-4 z-[999] bg-black/80 text-white text-[10px] px-2 py-1 rounded-md pointer-events-none font-mono">
         v2.0.1-frictionless
-      </div>
+      </div> */}
       {/* Navigation */}
-      <nav className="fixed top-0 w-full h-16 bg-white/80 backdrop-blur-xl z-[100] border-b border-gray-200/60">
-        <div className="max-w-6xl mx-auto h-full px-4 md:px-6 flex justify-between items-center">
-          <div className="flex items-center gap-10">
+      <nav className="fixed top-0 w-full h-[72px] bg-white/80 backdrop-blur-xl z-[100] border-b border-gray-200/60">
+        <div className="max-w-7xl mx-auto h-full px-4 md:px-8 flex justify-between items-center">
+          <div className="flex items-center gap-12">
             {/* Logo */}
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setActiveTab('execute')}>
-              <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center transition-transform group-active:scale-95 shadow-lg shadow-black/10">
+            <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => setActiveTab('execute')}>
+              <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center transition-transform group-active:scale-95 shadow-lg shadow-black/10">
                 <Sparkles className="text-white w-5 h-5" />
               </div>
-              <span className="text-lg font-bold tracking-tight text-gray-900">artfish</span>
-              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full ml-1">V2.0 LIVE</span>
+              <div className="flex flex-col">
+                <span className="text-lg font-bold tracking-tight text-gray-900 leading-none">artfish</span>
+                <span className="text-[10px] font-bold text-blue-600 tracking-wide mt-0.5">V2.0 LIVE</span>
+              </div>
             </div>
             
             {/* Desktop Menu */}
-            <div className="hidden md:flex gap-1">
+            <div className="hidden md:flex items-center gap-2">
               <NavButton 
                 active={activeTab === 'execute'} 
                 onClick={() => setActiveTab('execute')}
@@ -307,8 +309,8 @@ function App() {
         )}
       </AnimatePresence>
 
-      <main className="flex-grow pt-28 pb-20 px-4 md:px-6">
-        <div className="max-w-6xl mx-auto">
+      <main className="flex-grow pt-32 pb-24 px-4 md:px-8">
+        <div className="max-w-7xl mx-auto">
           {/* Top-up Modal */}
           <AnimatePresence>
             {isTopupOpen && (
@@ -400,8 +402,8 @@ function App() {
 
                 {/* Main Input Area */}
                 <div className="lg:col-span-8 space-y-6">
-                  <div className="bg-white rounded-[24px] p-1 shadow-xl shadow-black/[0.02] border border-gray-100">
-                    <div className="bg-gray-50/50 rounded-[20px] p-6 md:p-8">
+                  <div className="bg-white rounded-[32px] p-1.5 shadow-xl shadow-black/[0.03] border border-gray-200/60">
+                    <div className="bg-gray-50/50 rounded-[28px] p-6 md:p-10">
                       <div className="flex items-center gap-2 mb-4">
                         <div className="p-1.5 bg-blue-100 rounded-lg">
                           <Zap className="w-4 h-4 text-blue-600" />
