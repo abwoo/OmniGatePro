@@ -1,8 +1,4 @@
 # Core dependencies
-# No vendor-specific SDKs here!
-# Just standard libraries and minimal utilities.
-
-# Type checking and data models
 typing-extensions>=4.0.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
@@ -12,6 +8,8 @@ fastapi>=0.100.0
 uvicorn>=0.23.0
 httpx>=0.24.0
 slowapi>=0.1.9
+starlette>=0.27.0
+
 # Authentication
 python-jose[cryptography]>=3.3.0
 passlib[recommended,bcrypt,argon2]>=1.7.4
@@ -39,3 +37,6 @@ python-alipay-sdk>=3.0.0
 
 # Frontend & Others
 python-dotenv>=1.0.0
+pytest>=7.0.0
+pytest-cov>=4.0.0
+bandit>=1.7.0

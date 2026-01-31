@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// 优先使用环境变量，否则回退到 localhost
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
 
