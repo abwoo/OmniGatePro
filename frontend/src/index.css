@@ -2,37 +2,37 @@
 
 :root {
   /* 
-   * Design System Token - Inspired by Figma Tokens 
-   * 采用 HSL 模式以便于微调色调和饱和度
+   * Design System Token V2 - Refined for Optical Balance 
+   * 重点解决：图标重叠、间距不均、视觉层级混乱
    */
   
-  /* Primary Brand Colors - Deep Blue & Vivid Accent */
+  /* Primary Brand Colors - Adjusted for better contrast */
   --primary-hue: 220;
-  --primary-sat: 90%;
-  --color-primary: hsl(var(--primary-hue), var(--primary-sat), 56%); /* #0A84FF similar */
-  --color-primary-dark: hsl(var(--primary-hue), var(--primary-sat), 45%);
+  --primary-sat: 95%;
+  --color-primary: hsl(var(--primary-hue), var(--primary-sat), 50%); /* Deeper Blue */
+  --color-primary-dark: hsl(var(--primary-hue), var(--primary-sat), 40%);
   --color-primary-light: hsl(var(--primary-hue), var(--primary-sat), 96%);
 
-  /* Neutral Scale - Cool Grays for UI structure */
-  --color-surface-50: #fafafa;
-  --color-surface-100: #f4f4f5;
-  --color-surface-200: #e4e4e7;
-  --color-surface-300: #d4d4d8;
+  /* Neutral Scale - Warmer Grays for modern feel */
+  --color-surface-50: #F9FAFB;
+  --color-surface-100: #F3F4F6;
+  --color-surface-200: #E5E7EB;
+  --color-surface-300: #D1D5DB;
   
-  /* Text Colors - High Contrast for Readability */
-  --color-text-primary: #18181b;   /* Zinc-900 */
-  --color-text-secondary: #52525b; /* Zinc-600 */
-  --color-text-tertiary: #a1a1aa;  /* Zinc-400 */
+  /* Text Colors */
+  --color-text-primary: #111827;   /* Gray-900 */
+  --color-text-secondary: #4B5563; /* Gray-600 */
+  --color-text-tertiary: #9CA3AF;  /* Gray-400 */
 
   /* Borders */
-  --color-border-subtle: rgba(0, 0, 0, 0.06);
-  --color-border-medium: rgba(0, 0, 0, 0.12);
+  --color-border-subtle: #E5E7EB;
+  --color-border-medium: #D1D5DB;
 
-  /* Shadows - Layered for Depth */
+  /* Shadows - Softer, more diffuse */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
-  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 10px 10px -5px rgb(0 0 0 / 0.04);
 }
 
 @theme {
@@ -44,10 +44,6 @@
   
   --color-ui-bg: var(--color-surface-50);
   --color-ui-surface: #ffffff;
-  
-  --shadow-subtle: var(--shadow-sm);
-  --shadow-elevated: var(--shadow-md);
-  --shadow-floating: var(--shadow-lg);
 }
 
 * {
@@ -62,106 +58,119 @@ body {
   font-family: var(--font-sans);
   background-color: var(--color-ui-bg);
   color: var(--color-text-primary);
-  line-height: 1.5;
+  line-height: 1.6; /* Increased leading for readability */
 }
 
-/* --- Utility Classes for Micro-Interactions --- */
+/* --- Component Classes --- */
 
-/* Glassmorphism v2 - More subtle, less noise */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+/* Input Fields - STRUCTURE FIX for Icon Overlap */
+.ui-input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
 }
 
-/* Card Styles */
-.ui-card {
-  background-color: var(--color-ui-surface);
+/* 
+ * 强制 padding-left 确保文字永远不会碰到左侧图标 
+ * 图标容器宽度通常为 40px-48px
+ */
+.ui-input {
+  width: 100%;
+  height: 50px; /* Taller touch targets */
+  padding-left: 48px; /* Safe zone for icon */
+  padding-right: 16px;
+  background-color: white;
   border: 1px solid var(--color-border-subtle);
-  border-radius: 20px; /* More modern, larger radius */
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--color-text-primary);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: var(--shadow-sm);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.ui-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-border-medium);
+.ui-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-light);
+  outline: none;
 }
 
-/* Button Styles */
+.ui-input-icon-left {
+  position: absolute;
+  left: 16px;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+  width: 20px;
+  height: 20px;
+  z-index: 10; /* Ensure icon stays on top visually but doesn't block clicks */
+}
+
+.ui-input-action-right {
+  position: absolute;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.ui-input-action-right:hover {
+  color: var(--color-text-secondary);
+}
+
+/* Buttons */
 .btn-primary {
-  background-color: var(--color-text-primary); /* Modern trend: Black primary buttons */
+  height: 50px;
+  background-color: var(--color-text-primary);
   color: white;
-  border-radius: 14px;
+  border-radius: 12px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn-primary:hover {
   background-color: black;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-primary:active {
   transform: translateY(0);
-  box-shadow: none;
 }
 
-.btn-secondary {
+/* Cards */
+.ui-card {
   background-color: white;
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border-medium);
-  border-radius: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 24px; /* More modern, softer corners */
+  box-shadow: var(--shadow-sm);
+  overflow: hidden; /* Ensure content doesn't bleed */
 }
 
-.btn-secondary:hover {
-  background-color: var(--color-surface-50);
-  border-color: var(--color-text-primary);
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
-/* Input Fields - Optical Alignment */
-.ui-input-group {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.ui-input {
-  width: 100%;
-  height: 48px; /* Standardize height */
-  padding: 0 16px;
-  background-color: var(--color-surface-50);
-  border: 1px solid transparent;
-  border-radius: 12px;
-  font-size: 15px;
-  color: var(--color-text-primary);
-  transition: all 0.2s ease;
-}
-
-.ui-input:focus {
-  background-color: white;
-  border-color: var(--color-brand);
-  box-shadow: 0 0 0 4px var(--color-brand-light);
-  outline: none;
-}
-
-/* Scrollbar refinement */
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--color-border-medium);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-secondary);
+  border-radius: 3px;
 }

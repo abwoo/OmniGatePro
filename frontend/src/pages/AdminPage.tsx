@@ -199,16 +199,16 @@ const AdminPage: React.FC<AdminPageProps> = ({ token, onBack }) => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50/50 border-b border-gray-100">
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">User Identity</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Balance</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Joined Date</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+                <tr className="bg-gray-50/50 border-b border-gray-200">
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-[240px]">User Identity</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-[100px]">Role</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-[120px]">Balance</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-[120px]">Status</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-[140px]">Joined Date</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right min-w-[120px]">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-100">
                 {users.map((user) => (
                   <tr key={user.user_id} className="group hover:bg-gray-50/80 transition-colors">
                     <td className="px-6 py-4">

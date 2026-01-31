@@ -124,15 +124,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             {/* Email Field */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Email</label>
-              <div className="ui-input-group">
-                <Mail className="absolute left-4 w-5 h-5 text-gray-400 pointer-events-none" />
+              <div className="ui-input-wrapper">
+                <Mail className="ui-input-icon-left" />
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
                   required
-                  className="ui-input pl-11"
+                  className="ui-input"
                 />
               </div>
             </div>
@@ -147,22 +147,23 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   </button>
                 )}
               </div>
-              <div className="ui-input-group">
-                <Lock className="absolute left-4 w-5 h-5 text-gray-400 pointer-events-none" />
+              <div className="ui-input-wrapper">
+                <Lock className="ui-input-icon-left" />
                 <input 
                   type={showPassword ? "text" : "password"} 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
                   required
-                  className="ui-input pl-11 pr-12"
+                  className="ui-input"
+                  style={{ paddingRight: '48px' }} // Extra padding for eye icon
                 />
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                  className="ui-input-action-right"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
 
