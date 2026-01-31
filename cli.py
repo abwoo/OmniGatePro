@@ -20,13 +20,13 @@ from datetime import datetime
 # Initialize Rich Console and Typer
 console = Console()
 app = typer.Typer(
-    name="artfish",
-    help="Artfish Runtime Engine CLI - Figma Grade Terminal Experience",
+    name="edusense",
+    help="EduSense AI 教育垂直网关 - 智能教学助手控制台",
     add_completion=True,
 )
 
 # Configuration
-API_URL = os.getenv("ARTFISH_API_URL", "http://localhost:8000")
+API_URL = os.getenv("EDUSENSE_API_URL", "http://localhost:8000")
 
 # Setup Logging
 logging.basicConfig(
@@ -57,8 +57,8 @@ def get_git_revision_hash() -> str:
 
 @app.command()
 def doctor():
-    """系统诊断：检查环境、依赖及连接性"""
-    console.print(Panel("[bold cyan]Artfish System Diagnosis[/bold cyan]"))
+    """环境诊断：检查教学系统运行环境"""
+    console.print(Panel("[bold cyan]EduSense System Diagnosis[/bold cyan]"))
     
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Component", style="dim")
@@ -295,42 +295,36 @@ def backup():
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):
-    """Artfish 核心控制台"""
+    """EduSense 教育垂直网关"""
     if ctx.invoked_subcommand is None:
         console.print(Panel(
-            "[bold white]Artfish Gateway 🦞[/bold white]\n[dim]High-Performance AI Skill Orchestrator[/dim]",
+            "[bold white]EduSense AI Gateway 🎓[/bold white]\n[dim]K12 垂直场景智能教学执行中枢[/dim]",
             border_style="indigo",
             expand=False
         ))
         
         choice = questionary.select(
-            "Select an action:",
+            "请选择操作:",
             choices=[
-                "1. Run Execution (运行意图)",
-                "2. System Status (系统状态)",
+                "1. Tutor Assistant (智能助教)",
+                "2. Student Analytics (学情分析)",
                 "3. System Diagnosis (环境诊断)",
-                "4. Benchmark (性能测试)",
-                "5. Configuration (配置管理)",
-                "6. Backup (备份数据)",
-                "7. Exit (退出)"
+                "4. Configuration (教学参数配置)",
+                "5. Exit (退出)"
             ],
             use_shortcuts=True
         ).ask()
 
-        if "Run" in choice:
-            ctx.invoke(run)
-        elif "Status" in choice:
+        if "Tutor" in choice:
+            console.print("[yellow]进入助教模式...[/yellow]")
+        elif "Analytics" in choice:
             ctx.invoke(status)
         elif "Diagnosis" in choice:
             ctx.invoke(doctor)
-        elif "Benchmark" in choice:
-            ctx.invoke(benchmark)
         elif "Configuration" in choice:
             ctx.invoke(config)
-        elif "Backup" in choice:
-            ctx.invoke(backup)
         else:
-            console.print("[dim]Goodbye![/dim]")
+            console.print("[dim]祝您教学愉快！再见。[/dim]")
 
 if __name__ == "__main__":
     app()

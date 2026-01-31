@@ -77,6 +77,17 @@ class Gateway:
                 action.parameters
             )
             
+            # 逻辑调整：如果是教育场景且没有明确技能前缀，尝试分发给 tutor
+            if skill_name == "action" or skill_name not in [s.name for s in self.skill_manager.list_skills()]:
+                # 尝试探测术语来决定技能
+                detected = self.skill_manager.execute("tutor", "recognize_terms", text=action.parameters.get("query", ""))
+                if detected["subject"] != "unknown":
+                    skill_name = "tutor"
+                    tool_name = "heuristic_tutor"
+                else:
+                    skill_name = "tutor" # 默认回退到辅导技能
+                    tool_name = "heuristic_tutor"
+
             # 执行工具
             result = self.skill_manager.execute(skill_name, tool_name, **params)
             
@@ -96,7 +107,7 @@ class Gateway:
             event = TraceEvent(
                 timestamp=datetime.now(),
                 action_id=action.action_id,
-                status=ActionStatus.FAILED,
+                status=ActionStatus.FAIL,
                 result_payload={"error": str(e)},
                 metadata={"skill": skill_name, "tool": tool_name}
             )

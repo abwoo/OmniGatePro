@@ -1,16 +1,17 @@
-# Artfish Gateway 🦞
+# EduSense AI 教育垂直网关 🎓
 
-Artfish 是一个基于 Python 开发的轻量级、高性能 AI 任务执行引擎。它对齐了 **Clawdbot (OpenClaw)** 的核心架构，采用“网关 + 技能”模式，既可以作为独立的后端服务运行，也可以通过 **Model Context Protocol (MCP)** 完美集成到 Claude Desktop 等 AI 助手。
+EduSense 是一个专为 **K12 教育垂直场景** 设计的轻量级、高性能 AI 智能执行中枢。它采用“网关 + 教育技能”架构，旨在为学科辅导、智能测评、作文批改及学习路径规划提供一站式技术支撑。
 
 ---
 
 ## 📖 目录
 - [🚀 快速开始](#-快速开始)
-- [✨ 核心特性](#-核心特性)
-- [🧩 技能系统 (Skills)](#-技能系统-skills)
-- [🛠️ 命令行控制台 (CLI)](#-命令行控制台-cli)
-- [🔌 Claude 插件集成 (MCP)](#-claude-插件集成-mcp)
-- [🛡️ 安全与权限](#-安全与权限)
+- [✨ 核心教育特性](#-核心教育特性)
+- [🧩 教育技能系统 (EduSkills)](#-教育技能系统-eduskills)
+- [🛠️ 教师/家长控制台 (CLI)](#-教师家长控制台-cli)
+- [🤖 Telegram AI 助教](#-telegram-ai-助教)
+- [🔌 智能教育集成 (MCP)](#-智能教育集成-mcp)
+- [🛡️ 数据安全与隐私](#-数据安全与隐私)
 - [📅 更新日志](#-更新日志)
 
 ---
@@ -27,77 +28,81 @@ Artfish 是一个基于 Python 开发的轻量级、高性能 AI 任务执行引
 
 **Windows (PowerShell):**
 ```powershell
-.\artfish.ps1
+.\edusense.ps1
 ```
 
 **Unix/Mac (Bash):**
 ```bash
-chmod +x artfish
-./artfish
+chmod +x edusense
+./edusense
 ```
-*脚本会自动检测环境、安装依赖并启动交互式主向导。*
+*脚本会自动检测环境、安装依赖并启动交互式教学向导。*
 
 ---
 
-## ✨ 核心特性
+## ✨ 核心教育特性
 
-- **Clawdbot 架构对齐**: 采用网关 (Gateway) 模式管理会话与工具分发。
-- **模块化技能 (Skills)**: 支持动态加载 Python 编写的技能插件，灵活扩展 AI 能力。
-- **AI 原生设计**: 完美适配 Anthropic MCP 协议，支持 Claude 毫秒级调用。
-- **Figma 级终端交互**: 基于 `Rich` 打造，支持彩色日志、动态进度条和多级子命令。
-- **高性能架构**: 全量实施延迟加载 (Lazy Loading) 与 stdio 极速传输。
-
----
-
-## 🧩 技能系统 (Skills)
-
-Artfish 的核心能力由 **Skills** 提供。每个技能可以包含多个可被 AI 调用的工具。
-
-### 自定义技能示例
-在 `skills/` 目录下创建一个 `.py` 文件：
-```python
-from core.skill import BaseSkill, skill_tool
-
-class MySkill(BaseSkill):
-    name = "my_skill"
-    description = "我的自定义技能"
-
-    @skill_tool(description="执行一个自定义操作")
-    def do_something(self, param: str):
-        return f"操作成功: {param}"
-```
-
-### 已内置技能
-- **System**: 提供文件读写、终端命令执行等系统级操作。
+- **学科深度对齐**: 针对 K12 语数英、理化生、政史地等学科进行深度垂直优化。
+- **启发式辅导**: 借鉴业界成熟的对话系统设计理念，实现“引导式答疑”而非直接给答案。
+- **LaTeX 级公式解析**: 完美支持数学、物理复杂公式的识别与渲染。
+- **智能掌握度矩阵**: 实时追踪学生对知识点的掌握情况，精准定位薄弱环节。
+- **高性能架构**: 毫秒级响应，确保流畅的在线学习交互体验。
 
 ---
 
-## 🛠️ 命令行控制台 (CLI)
+## 🧩 教育技能系统 (EduSkills)
 
-直接输入 `./artfish` 即可进入交互菜单。
+EduSense 的核心教育能力由 **EduSkills** 模块驱动。
+
+### 核心技能列表
+- **TutorSkill (智能答疑)**: 提供学科术语识别、知识点解析及启发式引导。
+- **ExamSkill (智能测评)**: 支持基于知识点的阶梯式出题、公式自动解析。
+- **WritingSkill (作文批改)**: 智能识别修辞手法，提供结构化优化建议。
+
+---
+
+## 🛠️ 教师/家长控制台 (CLI)
+
+直接输入 `./edusense` 即可进入管理菜单。
 
 | 命令 | 说明 | 示例 |
 | :--- | :--- | :--- |
-| `run` | 运行意图任务 | `./artfish run "设计 Logo" --apply` |
-| `status` | 实时监控指标 | `./artfish status --verbose` |
-| `doctor` | 系统环境诊断 | `./artfish doctor` |
-| `benchmark` | 性能压力测试 | `./artfish benchmark` |
-| `config` | 交互式配置管理 | `./artfish config` |
+| `tutor` | 启动学科辅导模式 | `./edusense tutor "讲解勾股定理"` |
+| `status` | 查看学生学习概况 | `./edusense status --student "张三"` |
+| `doctor` | 系统环境诊断 | `./edusense doctor` |
+| `config` | 教学参数配置 | `./edusense config` |
 
 ---
 
-## 🔌 Claude 插件集成 (MCP)
+## 🤖 Telegram AI 助教
 
-Artfish 作为 **MCP Server** 运行，赋予 Claude 操作本地系统和执行复杂任务的能力。
+EduSense 集成了功能强大的 Telegram 机器人，让学生可以通过聊天界面随时随地进行学习。
+
+### 核心功能
+- **指令交互**：支持 `/tutor`, `/exam`, `/writing` 等专业指令。
+- **自动路由**：直接发送文本，系统将自动识别学科并进行启发式引导。
+- **并发支持**：基于异步架构，支持多用户同时在线学习。
+
+### 启动方式
+1. 在 `.env` 中配置 `TELEGRAM_BOT_TOKEN`。
+2. 运行启动命令：
+   ```bash
+   python interfaces/telegram_bot.py
+   ```
+
+---
+
+## 🔌 智能教育集成 (MCP)
+
+EduSense 作为 **MCP Server** 运行，可将专业的教育能力无缝集成到各类 AI 辅助教学终端中。
 
 ### 配置步骤
-1. 确保已安装 MCP：`pip install mcp`
-2. 打开 Claude 配置文件 (`%APPDATA%\Claude\claude_desktop_config.json`)。
-3. 添加以下配置：
+1. 确保已安装 MCP 运行环境。
+2. 在客户端配置文件中添加 EduSense 节点：
 ```json
 {
   "mcpServers": {
-    "artfish": {
+    "edusense": {
       "command": "python",
       "args": ["d:/artfish/mcp_server.py"],
       "env": { "PYTHONPATH": "d:/artfish" }
@@ -105,23 +110,20 @@ Artfish 作为 **MCP Server** 运行，赋予 Claude 操作本地系统和执行
   }
 }
 ```
-4. 重启 Claude Desktop 即可看到 Artfish 提供的所有 Skills 工具。
 
 ---
 
-## 🛡️ 安全与权限
+## 🛡️ 数据安全与隐私
 
-1. **Dry-run 保护**: 默认开启预览模式，敏感操作需显式追加 `--apply`。
-2. **非 Root 运行**: 建议以普通用户运行，必要时使用 `sudo` 提升。
-3. **沙箱建议**: 在执行不可信命令时，建议配合 Docker 等容器化环境。
+1. **学习行为加密**: 所有学生学习数据均采用本地加密存储。
+2. **内容合规性**: 内置教育敏感词库，确保 AI 生成内容符合 K12 教学规范。
+3. **沙箱执行**: 所有自动化测评脚本均在受限沙箱环境中运行。
 
 ---
 
 ## 📅 更新日志
 
-- **v0.4.0 (当前)**: 重构为 Gateway 架构，引入 Skills 系统，全面对齐 Clawdbot 设计理念。
-- **v0.3.0**: 引入 MCP 协议支持，优化冷启动速度。
-- **v0.2.0**: 重构终端交互，引入 Typer + Rich。
+- **v1.0.0 (当前)**: 品牌全面升级为 EduSense，重构为教育垂直网关，引入 K12 知识图谱与 EduSkills。
 
 ---
-**Artfish Gateway - 专业的 AI 技能执行中枢**
+**EduSense AI - 让每一位学生都拥有私人 AI 助教**

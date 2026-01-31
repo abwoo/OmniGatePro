@@ -12,14 +12,14 @@ except ImportError:
     print("Error: 'mcp' library not found. Please run: pip install mcp")
     sys.exit(1)
 
-# Import Artfish Core
+# Import EduSense Core
 from core.config import settings
 from core.gateway import Gateway
 from core.intent import ArtIntent
 
 # Initialize FastMCP - Optimized for stdio (Claude Desktop default)
-# 对齐 Clawdbot: Artfish Gateway as an MCP Server
-mcp = FastMCP("Artfish")
+# EduSense AI Gateway as an MCP Server
+mcp = FastMCP("EduSense")
 gateway = Gateway()
 
 # --- 动态注册 Skills 为 MCP Tools ---
@@ -50,10 +50,10 @@ register_skills()
 # --- 核心任务执行工具 ---
 
 @mcp.tool()
-async def execute_task(goals: List[str], style: str = "default") -> str:
+async def execute_task(goals: List[str], style: str = "educational") -> str:
     """
-    Execute a complex generative task or workflow based on a list of goals.
-    Artfish will plan and orchestrate multiple skills to achieve the goals.
+    Execute an educational task (e.g., tutoring, question generation, or analysis).
+    EduSense will plan and orchestrate multiple education skills to achieve the goals.
     """
     try:
         # 1. Setup Intent
@@ -80,13 +80,13 @@ async def execute_task(goals: List[str], style: str = "default") -> str:
     except Exception as e:
         return f"Error executing task: {str(e)}"
 
-@mcp.resource("artfish://status")
+@mcp.resource("edusense://status")
 def get_system_status() -> str:
-    """Get the current health and configuration of the Artfish Gateway."""
+    """Get the current health and configuration of the EduSense Gateway."""
     return json.dumps({
-        "engine": "Artfish Gateway",
+        "engine": "EduSense Gateway",
         "version": settings.VERSION,
-        "mode": "MCP Plugin",
+        "mode": "Educational MCP Plugin",
         "skills": [s.name for s in gateway.skill_manager.list_skills()],
         "status": "healthy"
     }, indent=2)

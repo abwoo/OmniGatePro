@@ -4,12 +4,15 @@ import os
 
 class Settings(BaseSettings):
     # Basic Config
-    APP_NAME: str = "artfish-runtime"
+    APP_NAME: str = "edusense-gateway"
     DEBUG: bool = True
-    VERSION: str = "0.1.0"
+    VERSION: str = "1.0.0"
     
     # Database Config
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./artfish.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./edusense.db")
+    
+    # Telegram Config
+    TELEGRAM_BOT_TOKEN: Optional[str] = os.getenv("TELEGRAM_BOT_TOKEN")
     
     # Execution Config
     # Set to True to run tasks synchronously without Redis (Recommended for local dev)

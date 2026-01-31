@@ -1,9 +1,9 @@
-# Artfish Entry Script (Windows PowerShell)
-# Handles dependency checks and launches the Python CLI
+# EduSense Entry Script (Windows PowerShell)
+# Handles dependency checks and launches the Educational Gateway CLI
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "Starting Artfish Runtime Engine..." -ForegroundColor Cyan
+Write-Host "Starting EduSense AI Gateway..." -ForegroundColor Cyan
 
 # 1. Check Python
 try {

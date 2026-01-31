@@ -17,6 +17,7 @@ class TraceEvent:
     action_id: str
     status: ActionStatus
     result_payload: Any
+    cost: float = 0.0
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass

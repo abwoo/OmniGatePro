@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
-# Artfish Entry Script (Unix/Mac)
-# Handles dependency checks and launches the Python CLI
+# EduSense Entry Script (Unix/Mac)
+# Handles dependency checks and launches the Educational Gateway CLI
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}Starting Artfish Runtime Engine...${NC}"
+echo -e "${GREEN}Starting EduSense AI Gateway...${NC}"
 
 # 1. Check Python
 if ! command -v python3 &> /dev/null; then
