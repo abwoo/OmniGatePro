@@ -24,7 +24,8 @@ Artfish Studio Pro 采用 **分布式 Agent 微服务架构**，通过中央编�
 ## 3. 技术规范 (Technical Specification)
 
 ### 通信协议
-- **gRPC**: Agent 节点间的高性能二进制通信。
+- **Asyncio (默认)**: 本地模式下使用 Python 原生异步调度，无需额外依赖。
+- **gRPC (可选)**: Agent 节点间的高性能二进制通信（分布式模式下使用，需安装 grpcio-tools）。
 - **Protobuf**: 统一的数据交换格式 (参考 `core/agent_service.proto`)。
 
 ### 性能指标

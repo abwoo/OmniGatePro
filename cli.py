@@ -71,8 +71,8 @@ def doctor():
 
     # Core Libraries
     try:
-        import fastapi, sqlalchemy, redis, grpc, bs4
-        table.add_row("Core Libraries", "[green]OK[/green]", "FastAPI, SQLAlchemy, Redis, gRPC, BeautifulSoup")
+        import fastapi, sqlalchemy, redis, bs4
+        table.add_row("Core Libraries", "[green]OK[/green]", "FastAPI, SQLAlchemy, Redis, BeautifulSoup")
     except ImportError as e:
         table.add_row("Core Libraries", "[red]MISSING[/red]", str(e))
 

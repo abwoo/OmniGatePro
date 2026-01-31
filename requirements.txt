@@ -30,10 +30,10 @@ svglib>=1.5.0
 celery>=5.3.0
 redis>=5.0.0
 
-# Distributed Communication
-grpcio>=1.50.0
-grpcio-tools>=1.50.0
-protobuf>=4.21.0
+# Distributed Communication (Optional, requires C++ Build Tools on Windows)
+# grpcio>=1.50.0
+# grpcio-tools>=1.50.0
+# protobuf>=4.21.0
 
 # CLI & UX (Figma Grade Terminal)
 rich>=13.0.0
