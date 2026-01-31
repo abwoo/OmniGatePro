@@ -14,6 +14,12 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
 from core.auth import verify_password, get_password_hash, create_access_token
 
 from core.config import settings
@@ -75,7 +81,12 @@ def init_alipay():
 
 alipay_status = init_alipay()
 
+# 初始化速率限制器
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(title=settings.APP_NAME, version=settings.VERSION)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # 全局异常处理
 @app.exception_handler(Exception)
@@ -93,6 +104,16 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content={"detail": "Database connection error"}
     )
+
+# 安全中间件：强制 HTTPS (生产环境建议开启)
+if not settings.DEBUG:
+    app.add_middleware(HTTPSRedirectMiddleware)
+
+# 安全中间件：信任主机
+app.add_middleware(
+    TrustedHostMiddleware, 
+    allowed_hosts=["*"] # 生产环境应指定具体域名
+)
 
 # 添加 CORS 支持
 app.add_middleware(
@@ -185,7 +206,8 @@ class ExecutionResponse(BaseModel):
 # --- API 路由 ---
 
 @app.post("/v1/auth/register", response_model=Token)
-async def register(user_in: UserRegister, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def register(request: Request, user_in: UserRegister, db: Session = Depends(get_db)):
     # 检查邮箱是否已存在
     if db.query(UserAccount).filter(UserAccount.email == user_in.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -208,7 +230,8 @@ async def register(user_in: UserRegister, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/v1/auth/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(UserAccount).filter(UserAccount.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(

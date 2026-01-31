@@ -81,6 +81,11 @@ class UserAccount(Base):
     total_spent = Column(Float, default=0.0)
     
     is_active = Column(Integer, default=1)
+    
+    # 2FA Support
+    is_2fa_enabled = Column(Integer, default=0)
+    totp_secret = Column(String(32), nullable=True)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class PaymentTransaction(Base):

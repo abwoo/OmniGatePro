@@ -21,6 +21,7 @@ import {
   User
 } from 'lucide-react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import LoginPage from './pages/LoginPage';
 
 const API_BASE = 'http://localhost:8000';
@@ -43,6 +44,7 @@ interface UserInfo {
 }
 
 function App() {
+  const { t, i18n } = useTranslation();
   const [token, setToken] = useState<string | null>(localStorage.getItem('artfish_token'));
   const [activeTab, setActiveTab] = useState('execute');
   const [goals, setGoals] = useState('');
@@ -165,13 +167,13 @@ function App() {
                 onClick={() => setActiveTab('execute')} 
                 className={`hover:text-black transition-colors ${activeTab === 'execute' ? 'text-black' : ''}`}
               >
-                Engine
+                {t('engine')}
               </button>
               <button 
                 onClick={() => setActiveTab('history')} 
                 className={`hover:text-black transition-colors ${activeTab === 'history' ? 'text-black' : ''}`}
               >
-                Audit Traces
+                {t('audit')}
               </button>
             </div>
           </div>
@@ -205,6 +207,19 @@ function App() {
                         <p className="text-[11px] text-black/40 font-medium mt-0.5">ID: {userInfo?.user_id}</p>
                       </div>
                       <div className="p-1">
+                        <div className="px-3 py-2 space-y-1">
+                           <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest">Language</p>
+                           <div className="flex gap-2">
+                             <button 
+                               onClick={() => i18n.changeLanguage('en')}
+                               className={`px-2 py-1 text-[10px] rounded ${i18n.language === 'en' ? 'bg-black text-white' : 'bg-apple-gray'}`}
+                             >EN</button>
+                             <button 
+                               onClick={() => i18n.changeLanguage('zh')}
+                               className={`px-2 py-1 text-[10px] rounded ${i18n.language === 'zh' ? 'bg-black text-white' : 'bg-apple-gray'}`}
+                             >中文</button>
+                           </div>
+                        </div>
                         <div className="px-3 py-2 space-y-1">
                            <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest">Your API Key</p>
                            <code className="block bg-apple-gray p-2 rounded-lg text-[10px] font-mono break-all text-black/60">
