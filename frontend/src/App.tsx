@@ -103,7 +103,7 @@ function App() {
   };
 
   const handleSubmit = async () => {
-    if (!goals || !token) return;
+    if (!goals) return;
     setLoading(true);
     try {
       const res = await api.post('/v1/execute', {
@@ -125,10 +125,6 @@ function App() {
 
   const pollStatus = async (runId: string) => {
     const timer = setInterval(async () => {
-      if (!token) {
-        clearInterval(timer);
-        return;
-      }
       try {
         const res = await api.get(`/v1/execution/${runId}`);
         const data = res.data;
@@ -182,6 +178,7 @@ function App() {
                 <Sparkles className="text-white w-5 h-5" />
               </div>
               <span className="text-lg font-bold tracking-tight text-gray-900">artfish</span>
+              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full ml-1">V2.0 LIVE</span>
             </div>
             
             {/* Desktop Menu */}
