@@ -18,7 +18,10 @@ import {
   X,
   Cpu,
   LogOut,
-  User
+  User,
+  Activity,
+  Box,
+  Terminal
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LoginPage from './pages/LoginPage';
@@ -60,9 +63,8 @@ function App() {
     try {
       const res = await api.get('/v1/user/me');
       setUserInfo(res.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch user info", err);
-      // @ts-ignore
       if (err.response?.status === 401) {
         handleLogout();
       }
@@ -70,10 +72,9 @@ function App() {
   };
 
   useEffect(() => {
-    // 初始获取 CSRF Token 和用户信息
     const init = async () => {
       try {
-        await api.get('/health'); // 触发获取 CSRF Cookie
+        await api.get('/health');
         if (token) {
           await fetchUserInfo();
         }
@@ -157,45 +158,50 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col">
-      <nav className="fixed top-0 w-full h-14 glass z-[100] border-b border-black/[0.08]">
-        <div className="container-custom h-full flex justify-between items-center">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setActiveTab('execute')}>
-              <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center transition-transform group-active:scale-90">
-                <Sparkles className="text-white w-4 h-4" />
+    <div className="min-h-screen w-full flex flex-col bg-gray-50/50">
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full h-16 bg-white/80 backdrop-blur-xl z-[100] border-b border-gray-200/60">
+        <div className="max-w-6xl mx-auto h-full px-4 md:px-6 flex justify-between items-center">
+          <div className="flex items-center gap-10">
+            {/* Logo */}
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setActiveTab('execute')}>
+              <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center transition-transform group-active:scale-95 shadow-lg shadow-black/10">
+                <Sparkles className="text-white w-5 h-5" />
               </div>
-              <span className="text-[17px] font-semibold tracking-tight">artfish</span>
+              <span className="text-lg font-bold tracking-tight text-gray-900">artfish</span>
             </div>
             
-            <div className="hidden md:flex gap-6 text-[13px] text-black/60 font-medium">
-              <button 
-                onClick={() => setActiveTab('execute')} 
-                className={`hover:text-black transition-colors ${activeTab === 'execute' ? 'text-black' : ''}`}
-              >
-                {t('engine')}
-              </button>
-              <button 
-                onClick={() => setActiveTab('history')} 
-                className={`hover:text-black transition-colors ${activeTab === 'history' ? 'text-black' : ''}`}
-              >
-                {t('audit')}
-              </button>
+            {/* Desktop Menu */}
+            <div className="hidden md:flex gap-1">
+              <NavButton 
+                active={activeTab === 'execute'} 
+                onClick={() => setActiveTab('execute')}
+                icon={<Terminal className="w-4 h-4" />}
+                label={t('engine')}
+              />
+              <NavButton 
+                active={activeTab === 'history'} 
+                onClick={() => setActiveTab('history')}
+                icon={<Activity className="w-4 h-4" />}
+                label={t('audit')}
+              />
             </div>
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-[#f5f5f7] rounded-full border border-black/[0.04]">
-              <Wallet className="w-3.5 h-3.5 text-black/40" />
-              <span className="text-[13px] font-semibold">${userInfo?.balance.toFixed(2)}</span>
+            {/* Balance Badge */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-gray-200 shadow-sm">
+              <Wallet className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-xs font-semibold text-gray-700 font-mono">${userInfo?.balance.toFixed(2)}</span>
             </div>
 
+            {/* Profile Menu */}
             <div className="relative">
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="w-8 h-8 rounded-full bg-apple-gray flex items-center justify-center hover:bg-black/5 transition-colors"
+                className="w-9 h-9 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 flex items-center justify-center border border-gray-200 hover:border-gray-300 transition-colors"
               >
-                <User className="w-4 h-4 text-black/60" />
+                <User className="w-4 h-4 text-gray-600" />
               </button>
 
               <AnimatePresence>
@@ -203,39 +209,33 @@ function App() {
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)} />
                     <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-2 w-64 card-apple p-2 z-50 overflow-hidden"
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden ring-1 ring-black/5"
                     >
-                      <div className="px-4 py-3 border-b border-black/[0.04]">
-                        <p className="text-[13px] font-bold truncate">{userInfo?.email}</p>
-                        <p className="text-[11px] text-black/40 font-medium mt-0.5">ID: {userInfo?.user_id}</p>
+                      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+                        <p className="text-sm font-bold text-gray-900 truncate">{userInfo?.email}</p>
+                        <p className="text-xs text-gray-500 font-medium mt-0.5 font-mono">ID: {userInfo?.user_id}</p>
                       </div>
-                      <div className="p-1">
-                        <div className="px-3 py-2 space-y-1">
-                           <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest">Language</p>
-                           <div className="flex gap-2">
-                             <button 
-                               onClick={() => i18n.changeLanguage('en')}
-                               className={`px-2 py-1 text-[10px] rounded ${i18n.language === 'en' ? 'bg-black text-white' : 'bg-apple-gray'}`}
-                             >EN</button>
-                             <button 
-                               onClick={() => i18n.changeLanguage('zh')}
-                               className={`px-2 py-1 text-[10px] rounded ${i18n.language === 'zh' ? 'bg-black text-white' : 'bg-apple-gray'}`}
-                             >中文</button>
+                      <div className="p-2 space-y-1">
+                        <div className="px-3 py-2">
+                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">API Credentials</p>
+                           <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex items-center justify-between group cursor-pointer hover:border-gray-200 transition-colors">
+                             <code className="text-[10px] font-mono text-gray-600 truncate max-w-[180px]">
+                               {userInfo?.api_key}
+                             </code>
+                             <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                            </div>
                         </div>
-                        <div className="px-3 py-2 space-y-1">
-                           <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest">Your API Key</p>
-                           <code className="block bg-apple-gray p-2 rounded-lg text-[10px] font-mono break-all text-black/60">
-                             {userInfo?.api_key}
-                           </code>
-                        </div>
+                        
+                        <div className="h-px bg-gray-100 my-1 mx-3" />
+
                         {userInfo?.role === 'admin' && (
                           <button 
                             onClick={() => { setIsAdminView(true); setIsProfileOpen(false); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-apple-blue hover:bg-apple-blue/5 rounded-xl transition-colors mt-1"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
                           >
                             <ShieldCheck className="w-4 h-4" />
                             Admin Console
@@ -243,7 +243,7 @@ function App() {
                         )}
                         <button 
                           onClick={handleLogout}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                         >
                           <LogOut className="w-4 h-4" />
                           Sign Out
@@ -255,36 +255,42 @@ function App() {
               </AnimatePresence>
             </div>
             
-            <button className="md:hidden p-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            <button className="md:hidden p-2 text-gray-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
       </nav>
 
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-[90] bg-white pt-20 px-6 md:hidden"
+            className="fixed inset-0 z-[90] bg-white pt-24 px-6 md:hidden"
           >
-            <div className="flex flex-col gap-8 text-2xl font-semibold">
-              <button onClick={() => { setActiveTab('execute'); setIsMenuOpen(false); }}>Engine</button>
-              <button onClick={() => { setActiveTab('history'); setIsMenuOpen(false); }}>Audit Traces</button>
-              <div className="h-[1px] bg-black/10 w-full" />
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Balance</span>
-                <span>${userInfo?.balance.toFixed(2)}</span>
-              </div>
+            <div className="flex flex-col gap-6">
+              <MobileNavButton 
+                active={activeTab === 'execute'} 
+                onClick={() => { setActiveTab('execute'); setIsMenuOpen(false); }}
+                icon={<Terminal className="w-5 h-5" />}
+                label="Runtime Engine"
+              />
+              <MobileNavButton 
+                active={activeTab === 'history'} 
+                onClick={() => { setActiveTab('history'); setIsMenuOpen(false); }}
+                icon={<Activity className="w-5 h-5" />}
+                label="Audit Traces"
+              />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <main className="flex-grow pt-24 pb-20 overflow-y-auto">
-        <div className="container-custom">
+      <main className="flex-grow pt-28 pb-20 px-4 md:px-6">
+        <div className="max-w-6xl mx-auto">
           <AnimatePresence mode="wait">
             {activeTab === 'execute' ? (
               <motion.div 
@@ -292,84 +298,85 @@ function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98 }}
-                className="space-y-12 md:space-y-20"
+                className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
               >
-                <div className="space-y-6 max-w-2xl">
+                {/* Hero Section */}
+                <div className="lg:col-span-12 mb-8">
                   <motion.h1 
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="text-[40px] md:text-[64px] leading-[1.1] font-bold tracking-tight"
+                    className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-4"
                   >
-                    Orchestrate <br />
-                    <span className="text-black/30">Artistic Intents.</span>
+                    Design Intelligence.
                   </motion.h1>
-                  <p className="text-[19px] md:text-[21px] leading-relaxed font-medium text-black/50">
-                    A high-performance runtime for generative models. <br className="hidden md:block" />
-                    Defined by you, executed by artfish.
+                  <p className="text-lg text-gray-500 max-w-2xl leading-relaxed">
+                    Orchestrate complex generative workflows with precision. 
+                    <span className="hidden md:inline"> Define your constraints, set your goals, and let the runtime handle the execution.</span>
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                  <div className="lg:col-span-8 space-y-6">
-                    <div className="card-apple p-6 md:p-8 space-y-6">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-[11px] font-bold text-black/40 uppercase tracking-[0.1em]">
-                          <Zap className="w-3.5 h-3.5" />
-                          Intent Goals
+                {/* Main Input Area */}
+                <div className="lg:col-span-8 space-y-6">
+                  <div className="bg-white rounded-[24px] p-1 shadow-xl shadow-black/[0.02] border border-gray-100">
+                    <div className="bg-gray-50/50 rounded-[20px] p-6 md:p-8">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="p-1.5 bg-blue-100 rounded-lg">
+                          <Zap className="w-4 h-4 text-blue-600" />
                         </div>
-                        <textarea 
-                          value={goals}
-                          onChange={(e) => setGoals(e.target.value)}
-                          placeholder="e.g. Cyberpunk landscape, neon-lit rainy streets, cinematic lighting..."
-                          className="w-full h-48 md:h-64 bg-[#f5f5f7] rounded-2xl p-5 focus:ring-1 focus:ring-black/10 outline-none transition-all resize-none text-[17px] leading-relaxed placeholder:text-black/20"
-                        />
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Execution Parameters</span>
                       </div>
                       
-                      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                        <div className="flex -space-x-2">
-                           {[1,2,3].map(i => (
-                             <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-[#f5f5f7] flex items-center justify-center">
-                               <Cpu className="w-5 h-5 text-black/20" />
-                             </div>
-                           ))}
-                           <div className="pl-4 text-[13px] font-medium text-black/40 flex items-center">
-                             Model Agnostic
+                      <textarea 
+                        value={goals}
+                        onChange={(e) => setGoals(e.target.value)}
+                        placeholder="Describe your intent..."
+                        className="w-full h-48 md:h-64 bg-transparent border-none outline-none resize-none text-lg md:text-xl text-gray-900 placeholder:text-gray-300 font-medium leading-relaxed"
+                      />
+                      
+                      <div className="h-px w-full bg-gray-200 my-6" />
+                      
+                      <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
+                        <div className="flex items-center gap-3">
+                           <div className="flex -space-x-2">
+                             {[1,2,3].map(i => (
+                               <div key={i} className="w-8 h-8 rounded-full border-2 border-gray-50 bg-white flex items-center justify-center shadow-sm">
+                                 <Cpu className="w-3.5 h-3.5 text-gray-400" />
+                               </div>
+                             ))}
                            </div>
+                           <span className="text-xs font-semibold text-gray-400">Auto-scaling enabled</span>
                         </div>
                         
                         <button 
                           onClick={handleSubmit}
                           disabled={loading || !goals}
-                          className="w-full sm:w-auto h-12 px-10 btn-primary text-[15px]"
+                          className="w-full sm:w-auto h-12 px-8 btn-primary flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
                         >
-                          {loading ? 'Initializing Engine...' : 'Execute Runtime'}
+                          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                          <span className="font-semibold">{loading ? 'Processing...' : 'Run Execution'}</span>
                         </button>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <div className="lg:col-span-4 space-y-6">
-                    <div className="card-apple p-6 space-y-6">
-                      <h3 className="text-[17px] font-bold tracking-tight">System Integrity</h3>
-                      <div className="space-y-4">
-                        <StatusRow icon={<ShieldCheck className="text-green-500" />} label="Backend" value="Secure" />
-                        <StatusRow icon={<Clock className="text-blue-500" />} label="Celery" value="Async Ready" />
-                        <StatusRow icon={<LayoutGrid className="text-orange-500" />} label="Storage" value="PostgreSQL" />
-                      </div>
+                {/* Sidebar Stats */}
+                <div className="lg:col-span-4 space-y-6">
+                  <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4">System Status</h3>
+                    <div className="space-y-4">
+                      <StatusRow icon={<ShieldCheck className="text-emerald-500" />} label="Security" value="Active" />
+                      <StatusRow icon={<Box className="text-blue-500" />} label="Nodes" value="3/3 Online" />
+                      <StatusRow icon={<LayoutGrid className="text-purple-500" />} label="Database" value="Healthy" />
                     </div>
+                  </div>
 
-                    <div className="card-apple p-6 bg-black text-white overflow-hidden relative group">
-                      <div className="relative z-10 space-y-4">
-                        <p className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Available Balance</p>
-                        <h2 className="text-[36px] font-bold tracking-tight">${userInfo?.balance.toFixed(2)}</h2>
-                        <div className="pt-2">
-                          <button className="w-full py-3 bg-white/10 rounded-xl text-[13px] font-semibold backdrop-blur-md cursor-not-allowed opacity-50">
-                            Refill coming soon
-                          </button>
-                        </div>
-                      </div>
-                      <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors" />
+                  <div className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-8 text-white relative overflow-hidden group">
+                    <div className="relative z-10">
+                      <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Current Balance</p>
+                      <h2 className="text-4xl font-bold tracking-tight font-mono">${userInfo?.balance.toFixed(2)}</h2>
                     </div>
+                    <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/15 transition-colors duration-500" />
                   </div>
                 </div>
               </motion.div>
@@ -381,32 +388,30 @@ function App() {
                 exit={{ opacity: 0, scale: 0.98 }}
                 className="space-y-8"
               >
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
-                  <h2 className="text-[32px] md:text-[40px] font-bold tracking-tight">Audit Traces</h2>
-                  <div className="text-[15px] text-black/40 font-medium">Immutable Execution Ledger</div>
+                <div className="flex items-end justify-between px-1">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Audit Traces</h2>
+                    <p className="text-gray-500 mt-1">Immutable ledger of all runtime executions.</p>
+                  </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="grid gap-4">
                   {executions.length === 0 ? (
-                    <div className="card-apple py-32 flex flex-col items-center gap-4">
-                      <div className="w-16 h-16 bg-[#f5f5f7] rounded-full flex items-center justify-center">
-                        <History className="w-8 h-8 text-black/10" />
+                    <div className="bg-white rounded-3xl py-32 border border-gray-100 border-dashed flex flex-col items-center gap-4">
+                      <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center">
+                        <History className="w-8 h-8 text-gray-300" />
                       </div>
-                      <p className="text-[17px] font-medium text-black/30 text-center">
-                        No active traces found. <br />
-                        Start an execution to begin.
-                      </p>
+                      <p className="text-gray-400 font-medium">No execution history found</p>
                     </div>
                   ) : (
                     executions.map((exec) => (
-                      <motion.div 
-                        layout
+                      <div 
                         key={exec.run_id}
-                        className="card-apple p-5 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-all group"
+                        className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all group flex flex-col sm:flex-row sm:items-center justify-between gap-6"
                       >
-                        <div className="flex items-center gap-5">
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                            exec.status === 'SUCCESS' ? 'bg-green-50 text-green-600' : 
+                        <div className="flex items-start sm:items-center gap-5">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                            exec.status === 'SUCCESS' ? 'bg-emerald-50 text-emerald-600' : 
                             exec.status === 'FAIL' ? 'bg-red-50 text-red-600' : 
                             'bg-blue-50 text-blue-600'
                           }`}>
@@ -415,37 +420,34 @@ function App() {
                           </div>
                           
                           <div>
-                            <div className="flex items-center gap-3">
-                              <span className="font-bold text-[16px] tracking-tight">{exec.run_id.slice(0, 8).toUpperCase()}</span>
-                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                                exec.status === 'SUCCESS' ? 'bg-green-500 text-white' : 
-                                exec.status === 'FAIL' ? 'bg-red-500 text-white' : 
-                                'bg-blue-500 text-white'
-                              }`}>{exec.status}</span>
+                            <div className="flex items-center gap-3 mb-1">
+                              <span className="font-bold text-gray-900 font-mono text-lg">{exec.run_id.slice(0, 8)}</span>
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                exec.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-700' : 
+                                exec.status === 'FAIL' ? 'bg-red-100 text-red-700' : 
+                                'bg-blue-100 text-blue-700'
+                              }`}>
+                                {exec.status}
+                              </span>
                             </div>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-black/40 font-medium mt-1">
-                              <span className="flex items-center gap-1"><Plus className="w-3 h-3" />{exec.actions_count} Actions</span>
-                              <span className="flex items-center gap-1"><CreditCard className="w-3 h-3" />${exec.total_cost.toFixed(4)}</span>
-                              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(exec.start_time).toLocaleTimeString()}</span>
+                            <div className="flex flex-wrap gap-4 text-xs font-medium text-gray-500">
+                              <span className="flex items-center gap-1.5"><Plus className="w-3.5 h-3.5" />{exec.actions_count} Actions</span>
+                              <span className="flex items-center gap-1.5"><CreditCard className="w-3.5 h-3.5" />${exec.total_cost.toFixed(4)}</span>
+                              <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{new Date(exec.start_time).toLocaleTimeString()}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 border-t md:border-t-0 pt-4 md:pt-0">
-                          {exec.status === 'SUCCESS' && (
-                            <button 
-                              onClick={() => downloadReport(exec.run_id)}
-                              className="flex-grow md:flex-grow-0 h-10 px-6 btn-secondary text-[13px] flex items-center justify-center gap-2"
-                            >
-                              <Download className="w-4 h-4" />
-                              Evidence PDF
-                            </button>
-                          )}
-                          <div className="hidden md:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#f5f5f7] transition-colors cursor-pointer">
-                            <ChevronRight className="w-5 h-5 text-black/20" />
-                          </div>
-                        </div>
-                      </motion.div>
+                        {exec.status === 'SUCCESS' && (
+                          <button 
+                            onClick={() => downloadReport(exec.run_id)}
+                            className="w-full sm:w-auto h-10 px-5 rounded-xl bg-gray-50 text-gray-700 font-medium text-sm hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 border border-gray-100"
+                          >
+                            <Download className="w-4 h-4" />
+                            Report
+                          </button>
+                        )}
+                      </div>
                     ))
                   )}
                 </div>
@@ -454,33 +456,51 @@ function App() {
           </AnimatePresence>
         </div>
       </main>
-
-      <footer className="py-10 border-t border-black/[0.04]">
-        <div className="container-custom flex flex-col md:flex-row justify-between items-center gap-4 text-[12px] font-medium text-black/30">
-          <p>© 2026 artfish Runtime. Built for precision.</p>
-          <div className="flex gap-6">
-            <span>Privacy</span>
-            <span>Audit Terms</span>
-            <span>Status</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
 
-function StatusRow({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
-  return (
-    <div className="flex items-center justify-between py-0.5">
-      <div className="flex items-center gap-3">
-        <div className="w-4 h-4 flex items-center justify-center">
-          {icon}
-        </div>
-        <span className="text-[14px] font-medium text-black/60">{label}</span>
-      </div>
-      <span className="text-[14px] font-bold text-black/80">{value}</span>
+// UI Components
+const NavButton = ({ active, onClick, icon, label }: any) => (
+  <button 
+    onClick={onClick}
+    className={`
+      flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all
+      ${active ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}
+    `}
+  >
+    {icon}
+    <span>{label}</span>
+  </button>
+);
+
+const MobileNavButton = ({ active, onClick, icon, label }: any) => (
+  <button 
+    onClick={onClick}
+    className={`
+      flex items-center gap-4 p-4 rounded-2xl text-lg font-medium transition-all w-full
+      ${active ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-600'}
+    `}
+  >
+    {icon}
+    <span>{label}</span>
+  </button>
+);
+
+const StatusRow = ({ icon, label, value }: any) => (
+  <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50">
+    <div className="flex items-center gap-3">
+      <div className="w-5 h-5 flex items-center justify-center">{icon}</div>
+      <span className="text-sm font-medium text-gray-600">{label}</span>
     </div>
-  );
-}
+    <span className="text-sm font-bold text-gray-900">{value}</span>
+  </div>
+);
+
+const Loader2 = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+  </svg>
+);
 
 export default App;

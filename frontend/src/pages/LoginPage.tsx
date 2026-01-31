@@ -12,7 +12,8 @@ import {
   EyeOff,
   CheckCircle2,
   XCircle,
-  Settings
+  Settings,
+  ChevronRight
 } from 'lucide-react';
 import { validatePasswordStrength, getPasswordStrengthScore, sanitizeInput } from '../utils/security';
 import SliderCaptcha from '../components/SliderCaptcha';
@@ -46,12 +47,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!captchaVerified) {
-      setError('Please slide to verify your identity');
+      setError('Please verify you are human');
       return;
     }
 
     if (!isLogin && strengthScore < 100) {
-      setError('Password security requirements not met');
+      setError('Password is not strong enough');
       return;
     }
 
@@ -82,7 +83,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       if (!err.response) {
         setError('Cannot reach server. Is the backend running?');
       } else {
-        setError(err.response?.data?.detail || 'Authentication failed. Please check your credentials.');
+        setError(err.response?.data?.detail || 'Authentication failed');
       }
       setCaptchaVerified(false);
     } finally {
@@ -91,114 +92,121 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#fbfbfd] p-6 relative overflow-hidden">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-apple-blue/5 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-500/5 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#FAFAFA] p-4 md:p-8 relative overflow-hidden">
+      {/* Background - Subtle Gradient */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50" />
+        <div className="absolute -top-[20%] -right-[10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-blue-100/40 to-transparent blur-3xl opacity-60" />
+        <div className="absolute -bottom-[20%] -left-[10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-purple-100/40 to-transparent blur-3xl opacity-60" />
       </div>
 
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[420px] z-10"
+        initial={{ opacity: 0, scale: 0.98, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-[440px] z-10"
       >
-        <div className="text-center mb-10">
-          <motion.div 
-            whileHover={{ scale: 1.05, rotate: 5 }}
-            className="inline-flex w-16 h-16 bg-black rounded-2xl items-center justify-center shadow-2xl mb-6 cursor-pointer"
-          >
-            <Sparkles className="text-white w-9 h-9" />
-          </motion.div>
-          <h1 className="text-3xl font-bold tracking-tight text-apple-dark mb-2">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
-          </h1>
-          <p className="text-[15px] font-medium text-black/40">
-            Artfish Runtime v0.1.0 • Enterprise Ready
-          </p>
-        </div>
+        <div className="ui-card p-8 md:p-10 shadow-xl shadow-black/[0.03]">
+          {/* Header */}
+          <div className="text-center mb-8 space-y-3">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-black text-white shadow-lg shadow-black/20 mb-2">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+              {isLogin ? 'Welcome back' : 'Create an account'}
+            </h1>
+            <p className="text-sm text-gray-500 font-medium">
+              Enter your credentials to access the runtime.
+            </p>
+          </div>
 
-        <div className="card-apple p-8 md:p-10 relative bg-white/80 backdrop-blur-xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field - New Flex Layout */}
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest ml-1">
-                Identity
-              </label>
-              <div className="flex items-center bg-apple-gray rounded-xl h-12 px-4 focus-within:bg-white focus-within:ring-2 focus-within:ring-apple-blue/10 transition-all border border-transparent focus-within:border-apple-blue/20">
-                <Mail className="w-4 h-4 text-black/20 shrink-0" />
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email Field */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Email</label>
+              <div className="ui-input-group">
+                <Mail className="absolute left-4 w-5 h-5 text-gray-400 pointer-events-none" />
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
                   required
-                  className="flex-grow bg-transparent border-none outline-none ml-3 text-[15px] font-medium text-apple-dark placeholder:text-black/20"
+                  className="ui-input pl-11"
                 />
               </div>
             </div>
 
-            {/* Password Field - New Flex Layout */}
-            <div className="space-y-2">
+            {/* Password Field */}
+            <div className="space-y-1.5">
               <div className="flex justify-between items-center px-1">
-                <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest">
-                  Security Key
-                </label>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Password</label>
                 {isLogin && (
-                  <button type="button" className="text-[11px] font-bold text-apple-blue hover:opacity-70 transition-opacity">
-                    Lost access?
+                  <button type="button" className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                    Forgot password?
                   </button>
                 )}
               </div>
-              <div className="flex items-center bg-apple-gray rounded-xl h-12 px-4 focus-within:bg-white focus-within:ring-2 focus-within:ring-apple-blue/10 transition-all border border-transparent focus-within:border-apple-blue/20">
-                <Lock className="w-4 h-4 text-black/20 shrink-0" />
+              <div className="ui-input-group">
+                <Lock className="absolute left-4 w-5 h-5 text-gray-400 pointer-events-none" />
                 <input 
                   type={showPassword ? "text" : "password"} 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
                   required
-                  className="flex-grow bg-transparent border-none outline-none ml-3 text-[15px] font-medium text-apple-dark placeholder:text-black/20"
+                  className="ui-input pl-11 pr-12"
                 />
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-black/20 hover:text-black/40 transition-colors ml-2"
+                  className="absolute right-4 text-gray-400 hover:text-gray-600 transition-colors p-1"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
 
-              {/* Password Strength */}
-              {!isLogin && password.length > 0 && (
-                <div className="pt-2 space-y-3 px-1">
-                  <div className="h-1 w-full bg-apple-gray rounded-full overflow-hidden">
-                    <motion.div 
-                      className={`h-full transition-colors ${
-                        strengthScore < 40 ? 'bg-red-500' : 
-                        strengthScore < 80 ? 'bg-yellow-500' : 'bg-green-500'
-                      }`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${strengthScore}%` }}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {passwordStrength.map((req, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        {req.met ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : <XCircle className="w-3 h-3 text-black/10" />}
-                        <span className={`text-[10px] font-bold ${req.met ? 'text-black/60' : 'text-black/30'}`}>{req.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Password Strength Indicator */}
+              <AnimatePresence>
+                {!isLogin && password.length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="pt-2 space-y-2 overflow-hidden"
+                  >
+                    <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <motion.div 
+                        className={`h-full transition-colors duration-300 ${
+                          strengthScore < 40 ? 'bg-red-500' : 
+                          strengthScore < 80 ? 'bg-yellow-500' : 'bg-green-500'
+                        }`}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${strengthScore}%` }}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {passwordStrength.map((req, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                          {req.met ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                          ) : (
+                            <div className="w-3.5 h-3.5 rounded-full border border-gray-300 shrink-0" />
+                          )}
+                          <span className={`text-[11px] font-medium ${req.met ? 'text-gray-700' : 'text-gray-400'}`}>
+                            {req.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Captcha */}
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest ml-1">
-                Human Verification
-              </label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-500 ml-1 uppercase tracking-wider">Security Check</label>
               <SliderCaptcha onSuccess={() => setCaptchaVerified(true)} />
             </div>
 
@@ -206,89 +214,109 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <AnimatePresence>
               {error && (
                 <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex items-center gap-3 p-4 bg-red-50 rounded-xl text-red-600 border border-red-100"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="flex items-start gap-3 p-3 bg-red-50 rounded-xl text-red-600 border border-red-100/50"
                 >
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span className="text-[12px] font-bold leading-tight">{error}</span>
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span className="text-xs font-medium leading-relaxed">{error}</span>
                 </motion.div>
               )}
             </AnimatePresence>
 
+            {/* Submit Button */}
             <button 
               type="submit"
               disabled={loading || (!isLogin && strengthScore < 100) || !captchaVerified}
-              className="w-full h-12 btn-primary flex items-center justify-center gap-2 group relative overflow-hidden shadow-lg shadow-apple-blue/20 active:scale-[0.98] transition-all"
+              className="w-full h-12 btn-primary flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin text-white/80" />
               ) : (
                 <>
-                  <span className="font-bold text-[15px]">{isLogin ? 'Sign In' : 'Create Account'}</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <span className="text-[15px]">{isLogin ? 'Sign In' : 'Create Account'}</span>
+                  <ArrowRight className="w-4 h-4 opacity-80" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Settings / API URL toggle */}
-          <div className="mt-8 pt-6 border-t border-black/[0.04] space-y-4">
-            <div className="flex justify-center gap-4">
+          {/* Footer / Toggle */}
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <div className="flex flex-col gap-4">
               <button 
                 onClick={() => {
                   setIsLogin(!isLogin);
                   setError('');
                   setCaptchaVerified(false);
                 }}
-                className="text-[13px] font-bold text-apple-blue hover:opacity-70"
+                className="text-sm font-medium text-gray-600 hover:text-black transition-colors flex items-center justify-center gap-1 group"
               >
-                {isLogin ? "Join artfish" : "Have an account?"}
+                {isLogin ? "Don't have an account?" : "Already have an account?"}
+                <span className="text-blue-600 group-hover:underline decoration-blue-600/30 underline-offset-2">
+                  {isLogin ? "Sign up" : "Log in"}
+                </span>
               </button>
-              <span className="text-black/10">|</span>
-              <button 
-                onClick={() => setShowSettings(!showSettings)}
-                className="text-[13px] font-bold text-black/30 hover:text-black/60 flex items-center gap-1"
-              >
-                <Settings className="w-3.5 h-3.5" />
-                API Config
-              </button>
-            </div>
 
-            {showSettings && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="space-y-3 pt-2"
-              >
-                <div className="bg-apple-gray p-3 rounded-xl space-y-2">
-                  <p className="text-[10px] font-black text-black/30 uppercase tracking-widest">Target Backend URL</p>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      value={tempApiUrl}
-                      onChange={(e) => setTempApiUrl(e.target.value)}
-                      className="flex-grow bg-white border border-black/5 rounded-lg px-3 py-1.5 text-xs font-mono"
-                    />
-                    <button 
-                      onClick={() => setApiUrl(tempApiUrl)}
-                      className="bg-black text-white text-[10px] font-bold px-3 py-1.5 rounded-lg"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                  <p className="text-[9px] text-black/20 font-medium">Changing this will reload the page.</p>
-                </div>
-              </motion.div>
-            )}
+              {/* API Config Toggle */}
+              <div className="flex justify-center">
+                <button 
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="text-[11px] font-semibold text-gray-400 hover:text-gray-600 flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all"
+                >
+                  <Settings className="w-3 h-3" />
+                  <span>Server Config</span>
+                  <ChevronRight className={`w-3 h-3 transition-transform ${showSettings ? 'rotate-90' : ''}`} />
+                </button>
+              </div>
+
+              {/* Settings Panel */}
+              <AnimatePresence>
+                {showSettings && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="bg-gray-50 p-4 rounded-xl space-y-3 border border-gray-100">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Backend URL</p>
+                        <div className="flex gap-2">
+                          <input 
+                            type="text" 
+                            value={tempApiUrl}
+                            onChange={(e) => setTempApiUrl(e.target.value)}
+                            className="flex-grow bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs font-mono text-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                          />
+                          <button 
+                            onClick={() => setApiUrl(tempApiUrl)}
+                            className="bg-black text-white text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-gray-400 leading-relaxed">
+                        If running locally, use <code className="bg-gray-200 px-1 rounded">http://localhost:8000</code>.
+                        <br />For production, ensure the server supports CORS.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
-        <div className="mt-10 text-center flex flex-col items-center gap-4">
-          <div className="flex items-center gap-2 text-[10px] font-bold text-black/20 uppercase tracking-[0.2em]">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            SOC2 Type II • ISO 27001
+        {/* Footer Info */}
+        <div className="mt-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 backdrop-blur border border-white/20 shadow-sm">
+            <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
+            <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+              End-to-End Encrypted
+            </span>
           </div>
         </div>
       </motion.div>

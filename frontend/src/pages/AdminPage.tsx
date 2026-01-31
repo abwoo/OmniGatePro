@@ -13,7 +13,8 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2
+  CheckCircle2,
+  MoreHorizontal
 } from 'lucide-react';
 import api from '../utils/api';
 
@@ -110,108 +111,154 @@ const AdminPage: React.FC<AdminPageProps> = ({ token, onBack }) => {
 
   if (loading && page === 1) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fbfbfd]">
-        <Loader2 className="w-8 h-8 text-apple-blue animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-8 h-8 text-black animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#fbfbfd] pb-20">
-      <nav className="h-16 glass sticky top-0 z-50 border-b border-black/[0.08]">
-        <div className="container-custom h-full flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Navbar */}
+      <nav className="h-16 bg-white/80 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={onBack} className="p-2 hover:bg-black/5 rounded-full transition-colors">
+            <button 
+              onClick={onBack} 
+              className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-900"
+            >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-red-500" />
-              <h1 className="text-xl font-bold tracking-tight">Admin Console</h1>
+            <div className="h-6 w-px bg-gray-200" />
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 bg-red-100 rounded-lg">
+                <ShieldAlert className="w-4 h-4 text-red-600" />
+              </div>
+              <h1 className="text-sm font-bold tracking-tight text-gray-900 uppercase">Admin Console</h1>
             </div>
           </div>
-          <button onClick={exportCSV} className="btn-secondary px-4 py-2 flex items-center gap-2 text-sm">
-            <Download className="w-4 h-4" />
-            Export CSV
+          <button 
+            onClick={exportCSV} 
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export Data
           </button>
         </div>
       </nav>
 
-      <main className="container-custom pt-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-6 pt-8 space-y-8">
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatCard icon={<Users className="text-blue-500" />} label="Total Users" value={stats?.total_users || 0} />
-          <StatCard icon={<ExternalLink className="text-purple-500" />} label="Total Executions" value={stats?.total_executions || 0} />
-          <StatCard icon={<BarChart3 className="text-green-500" />} label="Total Revenue" value={`$${stats?.total_revenue.toFixed(2) || '0.00'}`} />
-          <StatCard icon={<CheckCircle2 className="text-apple-blue" />} label="System Status" value={stats?.system_status || 'Offline'} />
+          <StatCard 
+            icon={<Users className="text-blue-600" />} 
+            label="Total Users" 
+            value={stats?.total_users || 0} 
+            trend="+12%"
+          />
+          <StatCard 
+            icon={<ExternalLink className="text-purple-600" />} 
+            label="Total Executions" 
+            value={stats?.total_executions || 0}
+            trend="+5%"
+          />
+          <StatCard 
+            icon={<BarChart3 className="text-emerald-600" />} 
+            label="Revenue" 
+            value={`$${stats?.total_revenue.toFixed(2) || '0.00'}`} 
+            trend="+8%"
+          />
+          <StatCard 
+            icon={<CheckCircle2 className="text-indigo-600" />} 
+            label="System Health" 
+            value={stats?.system_status || 'Offline'} 
+            highlight
+          />
         </div>
 
-        <div className="card-apple overflow-hidden">
-          <div className="p-6 border-b border-black/[0.04] flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h2 className="text-lg font-bold">User Management</h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+        {/* User Table Card */}
+        <div className="bg-white rounded-[24px] border border-gray-200 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">User Management</h2>
+              <p className="text-sm text-gray-500 mt-1">Manage access and monitor user activity.</p>
+            </div>
+            
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
               <input 
                 type="text" 
-                placeholder="Search by ID or Email..."
+                placeholder="Search users..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-apple-gray rounded-xl text-sm outline-none focus:ring-1 focus:ring-apple-blue/20 w-full md:w-64"
+                className="pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full md:w-72 transition-all"
               />
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-apple-gray text-[11px] font-bold text-black/40 uppercase tracking-widest">
-                <tr>
-                  <th className="px-6 py-4">User</th>
-                  <th className="px-6 py-4">Role</th>
-                  <th className="px-6 py-4">Balance</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Joined</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50/50 border-b border-gray-100">
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">User Identity</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Role</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Balance</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Joined Date</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/[0.04]">
+              <tbody className="divide-y divide-gray-50">
                 {users.map((user) => (
-                  <tr key={user.user_id} className="hover:bg-apple-gray/50 transition-colors">
+                  <tr key={user.user_id} className="group hover:bg-gray-50/80 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="font-bold text-black/80">{user.email}</span>
-                        <span className="text-[11px] text-black/40 font-mono">{user.user_id}</span>
+                        <span className="font-semibold text-gray-900 text-sm">{user.email}</span>
+                        <span className="text-[11px] text-gray-400 font-mono mt-0.5">{user.user_id}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        user.role === 'admin' ? 'bg-red-500 text-white' : 'bg-apple-gray text-black/40'
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide border ${
+                        user.role === 'admin' 
+                          ? 'bg-purple-50 text-purple-700 border-purple-100' 
+                          : 'bg-gray-100 text-gray-600 border-gray-200'
                       }`}>
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-medium">${user.balance.toFixed(2)}</td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5">
-                        <div className={`w-1.5 h-1.5 rounded-full ${user.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
-                        <span className="font-medium">{user.is_active ? 'Active' : 'Disabled'}</span>
+                      <span className="font-mono text-sm font-medium text-gray-700">${user.balance.toFixed(2)}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${user.is_active ? 'bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.1)]' : 'bg-red-500'}`} />
+                        <span className={`text-xs font-medium ${user.is_active ? 'text-emerald-700' : 'text-red-700'}`}>
+                          {user.is_active ? 'Active' : 'Disabled'}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-black/40 font-medium">
+                    <td className="px-6 py-4 text-xs font-medium text-gray-500">
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => toggleUserStatus(user.user_id, user.is_active)}
                           disabled={actionLoading === user.user_id}
-                          className={`p-2 rounded-lg transition-colors ${
-                            user.is_active ? 'hover:bg-red-50 text-red-500' : 'hover:bg-green-50 text-green-500'
+                          className={`p-2 rounded-lg transition-colors border ${
+                            user.is_active 
+                              ? 'bg-white border-gray-200 text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600' 
+                              : 'bg-white border-gray-200 text-gray-500 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600'
                           }`}
+                          title={user.is_active ? "Disable User" : "Activate User"}
                         >
                           {user.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                         </button>
                         <button 
                           onClick={() => deleteUser(user.user_id)}
                           disabled={actionLoading === user.user_id || user.role === 'admin'}
-                          className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors disabled:opacity-20"
+                          className="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-20"
+                          title="Delete User"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -223,24 +270,24 @@ const AdminPage: React.FC<AdminPageProps> = ({ token, onBack }) => {
             </table>
           </div>
 
-          <div className="p-6 border-t border-black/[0.04] flex items-center justify-between">
-            <span className="text-xs text-black/40 font-medium">
-              Showing {(page - 1) * 10 + 1} to {Math.min(page * 10, total)} of {total} users
+          <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
+            <span className="text-xs text-gray-500 font-medium">
+              Showing {(page - 1) * 10 + 1} to {Math.min(page * 10, total)} of {total} results
             </span>
             <div className="flex gap-2">
               <button 
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="p-2 hover:bg-apple-gray rounded-lg disabled:opacity-20 transition-all"
+                className="p-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
               </button>
               <button 
                 onClick={() => setPage(p => p + 1)}
                 disabled={page * 10 >= total}
-                className="p-2 hover:bg-apple-gray rounded-lg disabled:opacity-20 transition-all"
+                className="p-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4 text-gray-600" />
               </button>
             </div>
           </div>
@@ -250,15 +297,25 @@ const AdminPage: React.FC<AdminPageProps> = ({ token, onBack }) => {
   );
 };
 
-const StatCard = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number }) => (
-  <div className="card-apple p-6 space-y-4">
-    <div className="w-10 h-10 bg-apple-gray rounded-xl flex items-center justify-center">
-      {icon}
+const StatCard = ({ icon, label, value, trend, highlight }: { icon: React.ReactNode, label: string, value: string | number, trend?: string, highlight?: boolean }) => (
+  <div className="bg-white p-6 rounded-[20px] border border-gray-200 shadow-sm relative overflow-hidden group hover:border-blue-100 transition-colors">
+    <div className="flex justify-between items-start mb-4">
+      <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+        {icon}
+      </div>
+      {trend && (
+        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+          {trend}
+        </span>
+      )}
     </div>
-    <div className="space-y-1">
-      <p className="text-[11px] font-bold text-black/40 uppercase tracking-widest">{label}</p>
-      <h3 className="text-2xl font-bold tracking-tight">{value}</h3>
+    <div className="space-y-1 relative z-10">
+      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{label}</p>
+      <h3 className={`text-2xl font-bold tracking-tight ${highlight ? 'text-indigo-600' : 'text-gray-900'}`}>{value}</h3>
     </div>
+    {highlight && (
+      <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-indigo-50 rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-opacity" />
+    )}
   </div>
 );
 
