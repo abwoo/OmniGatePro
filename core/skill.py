@@ -59,6 +59,7 @@ class BaseSkill:
         for name, tool in self._tools.items():
             metadata.append({
                 "name": f"{self.name}_{name}",
+                "raw_name": name,
                 "description": tool._tool_description,
                 "parameters": tool._tool_args,
                 "skill": self.name

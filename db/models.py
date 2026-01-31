@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum as PyEnum
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON, Enum, Text
 from sqlalchemy.orm import declarative_base, relationship
@@ -26,7 +26,7 @@ class AgentExecution(Base):
     intent_snapshot = Column(JSON, nullable=False)
     plan_snapshot = Column(JSON)
     
-    start_time = Column(DateTime, default=datetime.utcnow)
+    start_time = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     end_time = Column(DateTime)
     
     # Relationships
@@ -53,7 +53,7 @@ class ActionTrace(Base):
     
     duration_ms = Column(Float)
     
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     finished_at = Column(DateTime)
 
     execution = relationship("AgentExecution", back_populates="actions")

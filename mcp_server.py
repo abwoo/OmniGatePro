@@ -40,7 +40,7 @@ def register_skills():
 
             # 注册到 FastMCP
             mcp.add_tool(
-                create_tool_func(tool_meta["skill"], tool_name.replace(f"{tool_meta['skill']}_", "")),
+                create_tool_func(tool_meta["skill"], tool_meta["raw_name"]),
                 name=tool_name,
                 description=tool_meta["description"]
             )
