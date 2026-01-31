@@ -9,7 +9,6 @@ import {
   Clock, 
   AlertCircle,
   Download,
-  ChevronRight,
   Wallet,
   Zap,
   ShieldCheck,
@@ -22,14 +21,12 @@ import {
   Activity,
   Box,
   Terminal,
-  Key,
   Copy,
   Check
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AdminPage from './pages/AdminPage';
 import api from './utils/api';
-import { v4 as uuidv4 } from 'uuid';
 
 interface Execution {
   run_id: string;
@@ -50,7 +47,7 @@ interface UserInfo {
 }
 
 function App() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('execute');
   const [isAdminView, setIsAdminView] = useState(false);
   const [goals, setGoals] = useState('');
@@ -76,7 +73,7 @@ function App() {
     try {
       const res = await api.get('/v1/user/me');
       setUserInfo(res.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch user info", err);
     }
   };
@@ -86,7 +83,7 @@ function App() {
       try {
         await api.get('/health');
         await fetchUserInfo();
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Initialization failed", err);
       }
     };
@@ -116,7 +113,7 @@ function App() {
       pollStatus(runId);
       setGoals('');
       setActiveTab('history');
-    } catch (err) {
+    } catch {
       alert("Submission failed. Check your balance or connection.");
     } finally {
       setLoading(false);
@@ -141,7 +138,7 @@ function App() {
           clearInterval(timer);
           fetchUserInfo();
         }
-      } catch (err) {
+      } catch {
         clearInterval(timer);
       }
     }, 2000);
@@ -157,7 +154,7 @@ function App() {
       await fetchUserInfo();
       setIsTopupOpen(false);
       alert("Success! Credits added.");
-    } catch (err) {
+    } catch {
       alert("Top-up failed. Please try again.");
     }
   };
@@ -552,7 +549,7 @@ function App() {
 }
 
 // UI Components
-const NavButton = ({ active, onClick, icon, label }: any) => (
+const NavButton = ({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) => (
   <button 
     onClick={onClick}
     className={`
@@ -565,7 +562,7 @@ const NavButton = ({ active, onClick, icon, label }: any) => (
   </button>
 );
 
-const MobileNavButton = ({ active, onClick, icon, label }: any) => (
+const MobileNavButton = ({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) => (
   <button 
     onClick={onClick}
     className={`
@@ -578,7 +575,7 @@ const MobileNavButton = ({ active, onClick, icon, label }: any) => (
   </button>
 );
 
-const StatusRow = ({ icon, label, value }: any) => (
+const StatusRow = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
   <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50">
     <div className="flex items-center gap-3">
       <div className="w-5 h-5 flex items-center justify-center">{icon}</div>

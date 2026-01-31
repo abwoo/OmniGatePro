@@ -14,8 +14,7 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
-  MoreHorizontal
+  CheckCircle2
 } from 'lucide-react';
 import api from '../utils/api';
 
@@ -70,8 +69,6 @@ const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     }
   };
 
-  const totalSystemRevenue = users.reduce((acc, user) => acc + user.balance, 0);
-
   useEffect(() => {
     setLoading(true);
     Promise.all([fetchUsers(), fetchStats()]).finally(() => setLoading(false));
@@ -85,8 +82,8 @@ const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
         { params: { active: currentStatus === 0 } }
       );
       fetchUsers();
-    } catch (err) {
-      alert("Failed to update user status");
+    } catch (err: unknown) {
+      console.error("Failed to update user status", err);
     } finally {
       setActionLoading(null);
     }
@@ -104,7 +101,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
       fetchUsers();
       fetchStats();
       alert("Recharge successful!");
-    } catch (err) {
+    } catch {
       alert("Recharge failed.");
     } finally {
       setActionLoading(null);
@@ -119,7 +116,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
       await api.delete(`/v1/admin/user/${userId}`);
       fetchUsers();
       fetchStats();
-    } catch (err) {
+    } catch {
       alert("Failed to delete user");
     } finally {
       setActionLoading(null);
