@@ -94,7 +94,7 @@ OmniGate Pro 允许开发者使用纯 Python 扩展 AI 的能力。
 
 ### 3.3 手动排查步骤
 如果自动自愈无效，请执行以下操作：
-1.  检查端口占用: 运行 `netstat -ano | findstr :18789` (针对 OpenClaw) 或 `netstat -ano | findstr :18799` (针对 OmniGate)。
+1.  检查端口占用: 运行 `openclaw gateway --port 18789 --verbose` (针对 OpenClaw) 或 `netstat -ano | findstr :18799` (针对 OmniGate)。
 2.  查阅日志: 
     *   主引擎日志: `logs/openclaw.log`。
     *   API 日志: 观察控制台输出或 `logs/` 目录下的相关记录。
