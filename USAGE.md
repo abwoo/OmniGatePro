@@ -79,7 +79,33 @@ OmniGate Pro 允许开发者使用纯 Python 扩展 AI 的能力。
 
 ---
 
-## 3. 常见问题排查 (Troubleshooting)
+## 3. 离线状态处理与系统自愈指南
+
+当仪表盘或状态检查显示 OmniGate Pro 或 OpenClaw 处于“离线”状态时，请按照以下步骤进行处理。
+
+### 3.1 识别离线组件
+*   OmniGate Pro 离线: 通常意味着 Python FastAPI 后端服务未启动或被异常终止。
+*   OpenClaw Gateway 离线: 意味着 Node.js 核心引擎未运行，此时 Telegram 等通讯渠道将失效。
+
+### 3.2 自动自愈步骤
+这是处理离线问题的首选方案：
+1.  运行 `python cli.py fix`：系统会自动检测并清理导致服务无法启动的残留进程，并重新安装缺失的依赖。
+2.  运行 `python cli.py run`：重新尝试联合启动双引擎。
+
+### 3.3 手动排查步骤
+如果自动自愈无效，请执行以下操作：
+1.  检查端口占用: 运行 `netstat -ano | findstr :18789` (针对 OpenClaw) 或 `netstat -ano | findstr :18799` (针对 OmniGate)。
+2.  查阅日志: 
+    *   主引擎日志: `logs/openclaw.log`。
+    *   API 日志: 观察控制台输出或 `logs/` 目录下的相关记录。
+3.  环境变量校验: 运行 `python cli.py doctor`，确认 API Key 是否过期或代理是否失效。
+
+### 3.4 彻底重置 (慎用)
+如果系统由于配置冲突无法启动且无法通过 fix 修复，请运行 `python cli.py onboard` 强制重新生成所有配置文件。
+
+---
+
+## 4. 常见问题排查 (Troubleshooting)
 
 ### 3.1 端口占用错误
 *   **现象**: 启动时提示端口被占用。
@@ -100,5 +126,5 @@ OmniGate Pro 允许开发者使用纯 Python 扩展 AI 的能力。
 
 ---
 
-## 4. 维护与更新
+## 5. 维护与更新
 建议每周运行一次 `python cli.py fix` 以确保环境依赖保持最新，并定期备份 `data/memory.json` 以保护您的长效记忆数据。
