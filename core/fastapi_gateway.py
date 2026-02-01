@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from core.omni_engine import omni_engine
 from core.api_engine import api_engine
+from core.token_tracker import token_tracker
 import uvicorn
 import os
 import psutil
@@ -17,6 +18,8 @@ class TaskRequest(BaseModel):
 
 class ContextRequest(BaseModel):
     context: str
+    provider: str = "deepseek"
+    scene: str = "general"
 
 # --- 辅助函数 ---
 def get_openclaw_config():
@@ -55,6 +58,7 @@ def get_bundled_skills():
 @app.get("/api/status")
 async def get_status():
     config = get_openclaw_config()
+    token_stats = token_tracker.get_summary()
     return {
         "cpu": psutil.cpu_percent(),
         "mem": psutil.virtual_memory().percent,
@@ -62,8 +66,14 @@ async def get_status():
         "version": "v3.0.0",
         "agents": config.get("agents", {}).get("list", ["main"]),
         "channels": [k for k, v in config.get("channels", {}).items() if v.get("enabled")],
-        "skills_count": len(get_bundled_skills())
+        "skills_count": len(get_bundled_skills()),
+        "token_savings_rate": token_stats["savings_rate"],
+        "total_saved": token_stats["total_saved"]
     }
+
+@app.get("/api/token/stats")
+async def get_token_stats():
+    return JSONResponse(content=token_tracker.get_summary())
 
 @app.get("/api/skills")
 async def get_skills():
@@ -81,7 +91,7 @@ async def offload(req: TaskRequest):
 @app.post("/shrink")
 async def shrink(req: ContextRequest):
     """Token 压缩接口"""
-    summary = omni_engine.compress_context(req.context)
+    summary = omni_engine.compress_context(req.context, provider=req.provider, scene=req.scene)
     return {"status": "success", "summary": summary}
 
 @app.get("/health")

@@ -1,10 +1,25 @@
 # 🦞 OmniGate Pro: Clawdbot 核心增强插件与极简网关
 
+[![Smoke Test](https://github.com/abwoo/OmniGatePro/actions/workflows/smoke-test.yml/badge.svg)](https://github.com/abwoo/OmniGatePro/actions/workflows/smoke-test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 OmniGate Pro 是一款专为 **Clawdbot** (OpenClaw) 打造的“全屋智能”补丁。它不仅让您的 AI 助手更聪明，更让它变得前所未有的**轻量**与**省钱**。
 
 ---
 
-## �️ 快速导航 (Documentation Portal)
+## 🚀 一键安装 (One-line Install)
+
+适用于 **Linux / macOS / Windows (WSL)**。请在终端执行：
+
+```bash
+curl -sSL https://raw.githubusercontent.com/abwoo/OmniGatePro/main/install.sh | bash
+```
+
+> **注意**: 该脚本会自动完成依赖检测、虚拟环境创建、PATH 配置及 OpenClaw 构建。
+
+---
+
+## 🗺️ 快速导航 (Documentation Portal)
 
 为了让您快速掌握系统，我们将所有操作分门别类，您可以点击下方链接跳转至详细文档：
 

@@ -1,0 +1,51 @@
+name: Smoke Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  smoke-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+        
+    - name: Run Installer
+      run: |
+        chmod +x install.sh
+        # Mocking the interactive prompt by providing 'n' if it asks for system deps
+        # In CI, deps are already set up above
+        echo "n" | ./install.sh
+        
+    - name: Verify Installation
+      run: |
+        export PATH="$PATH:$HOME/.local/bin"
+        omni --version
+        omni --help
+        
+    - name: Test Uninstaller
+      run: |
+        chmod +x uninstall.sh
+        ./uninstall.sh
+        if [ -d "$HOME/.omnigate" ]; then exit 1; fi

@@ -4,6 +4,7 @@ import asyncio
 from typing import Optional, List, Dict, Any
 from core.config import settings
 from core.network import NetworkClient
+from core.token_tracker import token_tracker
 
 logger = logging.getLogger("omni.core.llm_gateway")
 
@@ -38,24 +39,32 @@ class LLMGateway:
         start_time = time.time()
         
         try:
+            # 记录输入 Token (以字符数估算)
+            input_tokens = len(prompt)
+            
             # 优先调用真实的 DeepSeek API
             if provider == "deepseek":
-                return await self._call_deepseek_api(prompt, model)
+                res = await self._call_deepseek_api(prompt, model)
+            else:
+                # 兜底：模拟各厂商请求逻辑
+                response_text = await self._mock_llm_call(provider, prompt, model)
+                res = {
+                    "provider": provider,
+                    "text": response_text,
+                    "status": "success"
+                }
             
-            # 兜底：模拟各厂商请求逻辑
-            response_text = await self._mock_llm_call(provider, prompt, model)
-            
-            duration_ms = (time.time() - start_time) * 1000
-            
-            # 记录统计
-            self._record_usage(user_id, provider, duration_ms)
-            
-            return {
-                "provider": provider,
-                "text": response_text,
-                "latency_ms": duration_ms,
-                "status": "success"
-            }
+            if res.get("status") == "success":
+                output_tokens = len(res["text"])
+                # 记录到追踪器 (场景设为 llm_call)
+                # 注意：由于这是直接 API 调用，没有经过 OmniEngine 的压缩，所以 original = optimized
+                token_tracker.record(provider, "llm_call", input_tokens + output_tokens, input_tokens + output_tokens)
+                
+                duration_ms = (time.time() - start_time) * 1000
+                res["latency_ms"] = duration_ms
+                self._record_usage(user_id, provider, duration_ms)
+                
+            return res
         except Exception as e:
             logger.error(f"LLM Call failed for {provider}: {e}")
             return {"error": str(e), "status": "fail"}

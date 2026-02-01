@@ -18,6 +18,9 @@ from rich.text import Text
 from rich.align import Align
 from questionary import Separator
 
+from rich.columns import Columns
+from core.token_tracker import token_tracker
+
 app = typer.Typer(help="OmniGate Pro - Clawdbot 轻量化核心增强插件")
 console = Console()
 
@@ -68,12 +71,13 @@ def make_layout() -> Layout:
         Layout(name="right", ratio=2),
     )
     layout["left"].split_column(
-        Layout(name="status"),
-        Layout(name="channels"),
+        Layout(name="status", size=8),
+        Layout(name="token_stats", ratio=1),
+        Layout(name="channels", size=8),
     )
     layout["right"].split_column(
-        Layout(name="agents"),
-        Layout(name="skills"),
+        Layout(name="agents", size=8),
+        Layout(name="skills", ratio=1),
     )
     return layout
 
@@ -88,6 +92,38 @@ def get_status_panel():
     table.add_row("系统版本:", "v3.0.0")
     table.add_row("网关状态:", "[bold green]在线[/bold green]")
     return Panel(table, title="🚀 系统状态", border_style="blue")
+
+def get_token_panel():
+    stats = token_tracker.get_summary()
+    table = Table(show_header=True, header_style="bold magenta", box=None, expand=True)
+    table.add_column("来源", style="dim")
+    table.add_column("原始", justify="right")
+    table.add_column("优化", justify="right")
+    table.add_column("节省", style="green", justify="right")
+    
+    for provider, data in stats["providers"].items():
+        table.add_row(
+            provider.capitalize(), 
+            str(data["original"]), 
+            str(data["optimized"]), 
+            f"{round(data['saved']/data['original']*100 if data['original']>0 else 0)}%"
+        )
+    
+    summary = (
+        f"总节省率: [bold green]{stats['savings_rate']}%[/bold green]  "
+        f"累计节省: [bold yellow]{stats['total_saved']}[/bold yellow] Tokens"
+    )
+    
+    # 使用 Group 组合表格和摘要文字，避免 Layout 嵌套错误
+    from rich.console import Group
+    return Panel(
+        Group(
+            table,
+            Align.center(summary)
+        ),
+        title="📊 Token 节省看板", 
+        border_style="magenta"
+    )
 
 def get_channels_panel(config: Dict):
     channels = [k for k, v in config.get("channels", {}).items() if v.get("enabled")]
@@ -128,6 +164,7 @@ def dashboard():
         with Live(layout, refresh_per_second=2, screen=True):
             while True:
                 layout["status"].update(get_status_panel())
+                layout["token_stats"].update(get_token_panel()) # 更新 Token 看板
                 layout["channels"].update(get_channels_panel(config))
                 layout["agents"].update(get_agents_panel(config))
                 layout["skills"].update(get_skills_panel())
@@ -390,8 +427,20 @@ def setup_advanced():
             
     console.print("[bold green]✅ 进阶配置已同步。请运行 onboard 以生效。[/bold green]")
 
+VERSION = "3.0.0"
+
+def version_callback(value: bool):
+    if value:
+        console.print(f"OmniGate Pro Version: [bold cyan]{VERSION}[/bold cyan]")
+        raise typer.Exit()
+
 @app.callback(invoke_without_command=True)
-def main(ctx: typer.Context):
+def main(
+    ctx: typer.Context,
+    version: Optional[bool] = typer.Option(
+        None, "--version", "-v", help="显示版本号", callback=version_callback, is_eager=True
+    ),
+):
     """OmniGate Pro - 标准化流程控制台"""
     if ctx.invoked_subcommand is None:
         console.print(Panel(
