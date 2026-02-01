@@ -3,7 +3,7 @@ import asyncio
 from typing import Dict, Any, Optional, Type
 from core.adapters.base import BaseAdapter, APIResponse
 
-logger = logging.getLogger("artfish.api.engine")
+logger = logging.getLogger("omni.api.engine")
 
 class APIEngine:
     """

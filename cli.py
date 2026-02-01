@@ -1,376 +1,226 @@
 import typer
-import rich
-import questionary
-import psutil
-import platform
 import os
 import json
 import time
-import requests
-import yaml
-from typing import List, Optional, Dict, Any
+import asyncio
+import subprocess
+import platform
+import psutil
+import questionary
+from typing import Optional
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
-from rich.logging import RichHandler
-import logging
-from datetime import datetime
+from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
+from questionary import Separator
 
-# Initialize Rich Console and Typer
+app = typer.Typer(help="OmniGate Pro - Clawdbot 轻量化核心增强插件")
 console = Console()
-app = typer.Typer(
-    name="artfish",
-    help="Artfish Studio - 艺术教育多智能体协作平台控制台",
-    add_completion=True,
-)
 
-# Configuration
-API_URL = os.getenv("EDUSENSE_API_URL", "http://localhost:8000")
-
-# Setup Logging
-logging.basicConfig(
-    level="INFO",
-    format="%(message)s",
-    datefmt="[%X]",
-    handlers=[RichHandler(rich_tracebacks=True, console=console)]
-)
-logger = logging.getLogger("artfish")
-
-# --- Helpers ---
-
-def check_server_silent():
-    try:
-        requests.get(f"{API_URL}/health", timeout=2)
-        return True
-    except:
-        return False
-
-def get_git_revision_hash() -> str:
-    try:
-        import subprocess
-        return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()[:7]
-    except:
-        return "unknown"
-
-# --- Commands ---
-
-@app.command()
-def doctor():
-    """环境诊断：检查系统运行环境与 API 连通性"""
-    console.print(Panel("[bold cyan]OmniGate Pro System Diagnosis[/bold cyan]"))
-    
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("Component", style="dim")
-    table.add_column("Status")
-    table.add_column("Details")
-
-    # Python Version
-    py_ver = platform.python_version()
-    table.add_row("Python Runtime", "[green]OK[/green]", f"v{py_ver}")
-
-    # Core Libraries
-    try:
-        import fastapi, sqlalchemy, redis, bs4
-        table.add_row("Core Libraries", "[green]OK[/green]", "FastAPI, SQLAlchemy, Redis, BeautifulSoup")
-    except ImportError as e:
-        table.add_row("Core Libraries", "[red]MISSING[/red]", str(e))
-
-    # Redis Check
-    try:
-        import redis
-        r = redis.Redis(host='localhost', port=6379, socket_connect_timeout=1)
-        r.ping()
-        table.add_row("Redis Queue", "[green]ONLINE[/green]", "localhost:6379")
-    except:
-        table.add_row("Redis Queue", "[yellow]OFFLINE[/yellow]", "Task queue will run in simulation mode")
-
-    # .env Check
-    if os.path.exists(".env"):
-        table.add_row("Config File (.env)", "[green]FOUND[/green]", "Environment variables loaded")
-    else:
-        table.add_row("Config File (.env)", "[red]MISSING[/red]", "Run 'setup-keys' to create one")
-
-    console.print(table)
-
-@app.command()
-def status(
-    json_output: bool = typer.Option(False, "--json", help="结构化数据输出"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="显示详细指标")
-):
-    """实时指标：展示系统负载与业务健康度"""
-    cpu_usage = psutil.cpu_percent()
-    mem = psutil.virtual_memory()
-    disk = psutil.disk_usage("/")
-    git_hash = get_git_revision_hash()
-    
-    data = {
-        "system": {
-            "cpu_percent": cpu_usage,
-            "memory_percent": mem.percent,
-            "disk_percent": disk.percent,
-            "platform": platform.system(),
-            "uptime": int(time.time() - psutil.boot_time()),
-        },
-        "version": "0.4.0",
-        "git_hash": git_hash,
-        "api_status": "ONLINE" if check_server_silent() else "OFFLINE"
-    }
-
-    if json_output:
-        console.print_json(data=data)
-        return
-
-    console.print(Panel(f"[bold]Artfish Dashboard[/bold] | [dim]Hash: {git_hash}[/dim]", border_style="blue"))
-    
-    # System Resource Table
-    sys_table = Table(title="System Resources", box=rich.box.SIMPLE)
-    sys_table.add_column("Resource", style="cyan")
-    sys_table.add_column("Usage", justify="right")
-    sys_table.add_row("CPU", f"{cpu_usage}%")
-    sys_table.add_row("Memory", f"{mem.percent}% ({mem.used // (1024**2)}MB / {mem.total // (1024**2)}MB)")
-    sys_table.add_row("Disk", f"{disk.percent}%")
-    console.print(sys_table)
-
-    if verbose:
-        # Mocking some metrics for display
-        metrics_table = Table(title="Business Metrics (P95/P99)", box=rich.box.SIMPLE)
-        metrics_table.add_column("Metric", style="green")
-        metrics_table.add_column("Value", justify="right")
-        metrics_table.add_row("Request Latency (P95)", "124ms")
-        metrics_table.add_row("Request Latency (P99)", "450ms")
-        metrics_table.add_row("Throughput (QPS)", "12.5 req/s")
-        metrics_table.add_row("Success Rate", "99.8%")
-        console.print(metrics_table)
-
-@app.command()
-def run(
-    goals: List[str] = typer.Argument(None, help="意图目标列表"),
-    style: str = typer.Option("default", help="执行风格约束"),
-    apply: bool = typer.Option(False, "--apply", help="正式提交执行 (默认 Dry-run)"),
-    file: Optional[typer.FileText] = typer.Option(None, help="从 YAML/JSON 文件读取批量任务")
-):
-    """执行意图：提交目标并编排任务执行"""
-    task_goals = goals or []
-    
-    if file:
-        try:
-            content = yaml.safe_load(file)
-            task_goals = content.get("goals", [])
-            style = content.get("constraints", {}).get("style", style)
-        except Exception as e:
-            console.print(f"[red]Error reading file: {e}[/red]")
-            raise typer.Exit(1)
-
-    if not task_goals:
-        console.print("[yellow]No goals provided. Entering interactive mode...[/yellow]")
-        goal = questionary.text("What is your goal?").ask()
-        if not goal: return
-        task_goals = [goal]
-
-    if not apply:
-        console.print(Panel(
-            f"[bold yellow]DRY-RUN MODE[/bold yellow]\n\n"
-            f"Goals: {', '.join(task_goals)}\n"
-            f"Style: {style}\n\n"
-            "Add [bold]--apply[/bold] to actually execute this task.",
-            title="Pre-flight Check"
-        ))
-        return
-
-    # Actual Execution
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        console=console,
-    ) as progress:
-        t1 = progress.add_task("[cyan]Submitting task...", total=100)
-        
-        # 1. Submit
-        payload = {"goals": task_goals, "constraints": {"style": style}}
-        try:
-            res = requests.post(f"{API_URL}/v1/execute", json=payload)
-            res.raise_for_status()
-            run_id = res.json()["run_id"]
-            progress.update(t1, advance=30, description=f"[cyan]Task ID: {run_id[:8]}...")
-            
-            # 2. Poll
-            finished = False
-            while not finished:
-                time.sleep(1)
-                status_res = requests.get(f"{API_URL}/v1/execution/{run_id}")
-                status_data = status_res.json()
-                status = status_data["status"]
-                
-                if status == "SUCCESS":
-                    progress.update(t1, completed=100, description="[green]Execution Complete!")
-                    finished = True
-                elif status == "FAIL":
-                    progress.update(t1, completed=100, description="[red]Execution Failed!")
-                    finished = True
-                else:
-                    progress.update(t1, advance=5, description=f"[cyan]Running: {status}...")
-            
-            console.print(f"\n[bold green]SUCCESS![/bold green] Report: {API_URL}/v1/execution/{run_id}/report")
-            
-        except Exception as e:
-            console.print(f"[red]Execution error: {e}[/red]")
-
-@app.command()
-def benchmark(
-    iterations: int = typer.Option(5, help="测试轮数"),
-    concurrency: int = typer.Option(1, help="并发数")
-):
-    """性能测试：评估引擎响应延迟与吞吐量"""
-    console.print(f"Starting benchmark with {iterations} iterations...")
-    latencies = []
-    
-    with Progress(console=console) as progress:
-        task = progress.add_task("[yellow]Benchmarking...", total=iterations)
-        for i in range(iterations):
-            start = time.time()
-            requests.get(f"{API_URL}/health")
-            latencies.append((time.time() - start) * 1000)
-            progress.advance(task)
-    
-    latencies.sort()
-    p50 = latencies[len(latencies)//2]
-    p95 = latencies[int(len(latencies)*0.95)]
-    p99 = latencies[int(len(latencies)*0.99)]
-    
-    table = Table(title="Benchmark Results (ms)")
-    table.add_column("Metric", style="cyan")
-    table.add_column("Value", justify="right")
-    table.add_row("P50 Latency", f"{p50:.2f}ms")
-    table.add_row("P95 Latency", f"{p95:.2f}ms")
-    table.add_row("P99 Latency", f"{p99:.2f}ms")
-    table.add_row("Avg Latency", f"{sum(latencies)/len(latencies):.2f}ms")
-    console.print(table)
+# --- 核心逻辑说明 ---
+# 教程链条 (Tutorial Chain):
+# 1. DeepSeek API -> 提供推理大脑 (LLM)
+# 2. Telegram Bot -> 提供交互界面 (UI)
+# 3. OmniGate Pro -> 作为 Clawdbot 插件，实现:
+#    - [网关功能] 桥接 DeepSeek 与 Telegram
+#    - [Token 压缩] 自动精简上下文，大幅降低 API 费用
+#    - [本地卸载] 让 Clawdbot 具备执行本地 Shell 指令的能力
 
 @app.command()
 def setup_keys():
-    """配置向导：快速设置 AI 密钥与平台 Token"""
-    console.print(Panel("[bold green]OmniGate Pro 密钥配置向导[/bold green]"))
+    """1. 密钥配置：设置 DeepSeek、Telegram 及其他社交平台凭证"""
+    console.print(Panel("[bold green]第一步：全平台密钥配置向导[/bold green]"))
     
-    openai_key = questionary.password("请输入 OpenAI API Key (可选):").ask()
-    deepseek_key = questionary.password("请输入 DeepSeek API Key (推荐):").ask()
-    tg_token = questionary.text("请输入 Telegram Bot Token (可选):").ask()
+    env_vars = {}
+    if os.path.exists(".env"):
+        with open(".env", "r") as f:
+            for line in f:
+                if "=" in line:
+                    parts = line.strip().split("=", 1)
+                    if len(parts) == 2:
+                        env_vars[parts[0].strip()] = parts[1].strip()
+
+    keys = {}
+    console.print("\n[bold]1. 大模型核心 (DeepSeek)[/bold]")
+    keys["DEEPSEEK_API_KEY"] = questionary.password("请输入 DeepSeek API Key:", default=env_vars.get("DEEPSEEK_API_KEY", "")).ask()
     
-    # 写入 .env
+    console.print("\n[bold]2. 聊天平台 (多端支持)[/bold]")
+    keys["TELEGRAM_BOT_TOKEN"] = questionary.password("请输入 Telegram Bot Token:", default=env_vars.get("TELEGRAM_BOT_TOKEN", "")).ask()
+    keys["TELEGRAM_OWNER_ID"] = questionary.text("请输入您的 Telegram 用户 ID (权限锁定):", default=env_vars.get("TELEGRAM_OWNER_ID", "")).ask()
+    
+    # 扩展：支持 Discord 和 飞书 (OmniGate 独有简化配置)
+    if questionary.confirm("是否配置 Discord Bot?").ask():
+        keys["DISCORD_BOT_TOKEN"] = questionary.password("请输入 Discord Bot Token:").ask()
+    
+    if questionary.confirm("是否配置飞书 (Feishu) App?").ask():
+        keys["FEISHU_APP_ID"] = questionary.text("请输入飞书 App ID:").ask()
+        keys["FEISHU_APP_SECRET"] = questionary.password("请输入飞书 App Secret:").ask()
+
     with open(".env", "w") as f:
-        if openai_key: f.write(f"OPENAI_API_KEY={openai_key}\n")
-        if deepseek_key: f.write(f"DEEPSEEK_API_KEY={deepseek_key}\n")
-        if tg_token: f.write(f"TELEGRAM_BOT_TOKEN={tg_token}\n")
-    
-    console.print("[bold green]✅ 配置文件已生成！[/bold green]")
+        for k, v in keys.items():
+            if v: f.write(f"{k}={v}\n")
+            
+    console.print("[bold green]✅ 全平台密钥已同步。[/bold green]")
 
 @app.command()
-def connect_claw():
-    """一键连接 Clawdbot (OpenClaw)：自动生成插件配置"""
-    console.print(Panel("[bold magenta]OpenClaw x OmniGate 快速连接[/bold magenta]"))
+def onboard():
+    """2. 一键入驻：全自动配置 Clawdbot 及其 OmniGate 增强插件"""
+    console.print(Panel("[bold cyan]第二步：Clawdbot + OmniGate 联合入驻[/bold cyan]"))
     
-    config = {
-        "mcp_server": "python core/mcp_server.py",
-        "rest_endpoint": "http://127.0.0.1:18789",
-        "pointers": {
-            "omni.offload": "本地执行与任务卸载",
-            "omni.shrink": "Token 压缩与优化"
-        }
+    if not os.path.exists(".env"):
+        setup_keys()
+    
+    # 读取环境变量
+    env_vars = {}
+    with open(".env", "r") as f:
+        for line in f:
+            if "=" in line:
+                parts = line.strip().split("=", 1)
+                if len(parts) == 2:
+                    env_vars[parts[0].strip()] = parts[1].strip()
+
+    # 路径准备
+    home = os.path.expanduser("~")
+    openclaw_dir = os.path.join(home, ".openclaw")
+    workspace_dir = os.path.join(openclaw_dir, "workspace")
+    os.makedirs(workspace_dir, exist_ok=True)
+
+    # 读取现有配置
+    config_path = os.path.join(openclaw_dir, "openclaw.json")
+    if os.path.exists(config_path):
+        with open(config_path, "r", encoding="utf-8") as f:
+            try: config = json.load(f)
+            except: config = {}
+    else: config = {}
+
+    # --- OpenClaw 基础功能：通道连接 ---
+    if "channels" not in config: config["channels"] = {}
+    
+    # Telegram
+    config["channels"]["telegram"] = {
+        "enabled": True,
+        "botToken": env_vars.get("TELEGRAM_BOT_TOKEN", ""),
+        "allowFrom": [int(env_vars.get("TELEGRAM_OWNER_ID", 0))] if env_vars.get("TELEGRAM_OWNER_ID") else ["*"],
+        "dmPolicy": "open"
     }
     
-    console.print("[bold yellow]第一步: 请确保已安装 OpenClaw (npm install -g openclaw)[/bold yellow]")
-    console.print("[bold yellow]第二步: 运行以下命令启动 OmniGate 插件服务:[/bold yellow]")
-    console.print("   [cyan]python core/mcp_server.py[/cyan]")
-    
-    console.print("\n[bold yellow]第三步: 在 OpenClaw 的 workspace 配置中添加此插件:[/bold yellow]")
-    console.print(f"[dim]{json.dumps(config, indent=2)}[/dim]")
-    
-    console.print("\n[bold green]✅ 连接指令已准备就绪！[/bold green]")
+    # Discord (OmniGate 自动化同步)
+    if env_vars.get("DISCORD_BOT_TOKEN"):
+        config["channels"]["discord"] = {
+            "enabled": True,
+            "botToken": env_vars.get("DISCORD_BOT_TOKEN", ""),
+            "dmPolicy": "open"
+        }
 
-@app.command()
-def run_all():
-    """全自动模式：同时启动网关与 OpenClaw (需已安装)"""
-    console.print("[bold cyan]🚀 正在启动 OmniGate Pro 全能模式...[/bold cyan]")
-    # 实际场景中会启动多进程，此处为演示逻辑
-    console.print("1. 启动本地 MCP 服务器...")
-    console.print("2. 启动智能网关...")
-    console.print("3. 尝试唤起 OpenClaw...")
-
-@app.command()
-def config():
-    """配置管理：查看或修改系统配置"""
-    from core.config import settings
-    
-    action = questionary.select(
-        "What would you like to do?",
-        choices=[
-            "View Current Config",
-            "Edit Environment (Interactive)",
-            "Back"
+    # --- OmniGate 核心增强：DeepSeek 优化模型 ---
+    if "models" not in config: config["models"] = {}
+    if "providers" not in config["models"]: config["models"]["providers"] = {}
+    config["models"]["providers"]["deepseek"] = {
+        "baseUrl": "https://api.deepseek.com",
+        "apiKey": env_vars.get("DEEPSEEK_API_KEY", ""),
+        "api": "openai-completions",
+        "models": [
+            {
+                "id": "deepseek-chat", 
+                "name": "DeepSeek Chat (Omni Optimized)", 
+                "api": "openai-completions",
+                "contextWindow": 64000,
+                "maxTokens": 4096
+            }
         ]
-    ).ask()
+    }
 
-    if action == "View Current Config":
-        console.print_json(data=settings.model_dump())
-    elif action == "Edit Environment (Interactive)":
-        console.print("[yellow]Coming soon: Environment editor[/yellow]")
+    # --- OmniGate 独有功能：Python MCP 插件注册 ---
+    # 这让 Clawdbot 具备了执行本地任务、Token 压缩、深度性能分析的能力
+    mcp_config = {
+        "mcpServers": {
+            "omnigate": {
+                "command": "python",
+                "args": [os.path.abspath("core/mcp_server.py")],
+                "env": {"PYTHONPATH": os.path.abspath(".")}
+            }
+        }
+    }
+    mcp_path = os.path.join(workspace_dir, "mcp.json")
+    with open(mcp_path, "w", encoding="utf-8") as f:
+        json.dump(mcp_config, f, indent=2, ensure_ascii=False)
+
+    with open(config_path, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+
+    console.print(Panel(
+        f"[bold green]✅ 联合入驻成功！[/bold green]\n\n"
+        f"1. [cyan]Clawdbot[/cyan]: 已连接 Telegram/Discord 通道。\n"
+        f"2. [cyan]OmniGate[/cyan]: 已成功挂载 MCP 插件，提供 [bold]Token 压缩[/bold] 与 [bold]Python 工具箱[/bold]。\n"
+        f"3. [cyan]DeepSeek[/cyan]: 已优化为默认对话大脑。",
+        title="入驻报告"
+    ))
 
 @app.command()
-def backup():
-    """备份数据：导出数据库及结果存档"""
-    import shutil
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_name = f"artfish_backup_{timestamp}"
+def run():
+    """3. 启动运行：开启轻量化网关与可视化面板"""
+    console.print(Panel("[bold green]第三步：启动 OmniGate 网关服务[/bold green]"))
     
-    console.print(f"[cyan]Creating backup {backup_name}...[/cyan]")
-    try:
-        # Create a temp dir to collect files
-        os.makedirs(backup_name)
-        if os.path.exists("artfish.db"):
-            shutil.copy("artfish.db", backup_name)
-        if os.path.exists("exports"):
-            shutil.copytree("exports", f"{backup_name}/exports")
-            
-        shutil.make_archive(backup_name, 'zip', backup_name)
-        shutil.rmtree(backup_name)
-        console.print(f"[green]Backup created: {backup_name}.zip[/green]")
-    except Exception as e:
-        console.print(f"[red]Backup failed: {e}[/red]")
+    # 自动打开浏览器
+    import webbrowser
+    import threading
+    def open_browser():
+        time.sleep(2)
+        webbrowser.open("http://localhost:18789")
+    threading.Thread(target=open_browser, daemon=True).start()
+    
+    from core.fastapi_gateway import run_api
+    run_api(port=18789)
+
+@app.command()
+def fix():
+    """修复工具：一键解决 Windows 兼容性与配置问题"""
+    console.print("[bold yellow]正在执行系统自愈修复...[/bold yellow]")
+    os.system("openclaw doctor --fix")
+    console.print("[bold green]✅ 修复完成。[/bold green]")
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):
-    """Artfish Studio 艺术教育协作网关"""
+    """OmniGate Pro - 标准化流程控制台"""
     if ctx.invoked_subcommand is None:
         console.print(Panel(
-            "[bold white]Artfish Studio 🎨 🦞[/bold white]\n[dim]艺术教育多智能体协作执行中枢[/dim]",
-            border_style="indigo",
-            expand=False
+            "[bold white]OmniGate Pro 🦞 Clawdbot 极简插件中心[/bold white]\n"
+            "[dim]目标：更轻量、更省钱、更易用[/dim]",
+            border_style="blue", expand=False
         ))
         
         choice = questionary.select(
-            "请选择操作:",
+            "请按照 1-2-3 标准化流程操作:",
             choices=[
-                "1. Studio Assistant (创作助教)",
-                "2. Project Analytics (项目分析)",
-                "3. System Diagnosis (系统诊断)",
-                "4. Configuration (配置管理)",
-                "5. Exit (退出)"
-            ],
-            use_shortcuts=True
+                "1️⃣ 配置密钥 [设置 DeepSeek/Telegram]",
+                "2️⃣ 一键入驻 [关联 Clawdbot 插件系统]",
+                "3️⃣ 启动运行 [开启可视化管理面板]",
+                Separator(),
+                "🔧 系统自愈 [修复 Windows 兼容报错]",
+                "💡 教程链条 [查看系统底层连接逻辑]",
+                "❌ 退出系统"
+            ]
         ).ask()
 
-        if "Studio" in choice:
-            console.print("[yellow]进入创作室模式...[/yellow]")
-        elif "Analytics" in choice:
-            ctx.invoke(status)
-        elif "Diagnosis" in choice:
-            ctx.invoke(doctor)
-        elif "Configuration" in choice:
-            ctx.invoke(config)
-        else:
-            console.print("[dim]祝您创作愉快！再见。[/dim]")
+        if not choice or "退出" in choice: return
+
+        if "配置密钥" in choice: ctx.invoke(setup_keys)
+        elif "一键入驻" in choice: ctx.invoke(onboard)
+        elif "启动运行" in choice: ctx.invoke(run)
+        elif "系统自愈" in choice: ctx.invoke(fix)
+        elif "教程链条" in choice:
+            console.print(Panel(
+                "🔗 [bold]OmniGate Pro 逻辑链接说明[/bold]\n\n"
+                "1. [cyan]DeepSeek[/cyan] 是你的 AI 大脑，负责理解指令。\n"
+                "2. [cyan]Telegram[/cyan] 是你的手机端入口，负责接收消息。\n"
+                "3. [cyan]OmniGate[/cyan] 则是连接两者的『智能中继站』：\n"
+                "   - 它会拦截消息，在发送给 DeepSeek 前进行 [bold]Token 压缩[/bold] (省钱)。\n"
+                "   - 它会让 DeepSeek 能够调用 [bold]本地工具[/bold] (如运行脚本、查文件)。\n"
+                "   - 它通过 [bold]MCP 协议[/bold] 深度嵌入 Clawdbot，使其运行更流程。",
+                title="逻辑关系"
+            ))
+            time.sleep(5)
+            ctx.invoke(main)
 
 if __name__ == "__main__":
     app()

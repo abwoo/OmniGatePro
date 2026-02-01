@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Optional
 from core.llm_gateway import LLMGateway
 from core.config import settings
 
-logger = logging.getLogger("artfish.core.persona")
+logger = logging.getLogger("omni.core.persona")
 
 class PersonaEngine:
     """

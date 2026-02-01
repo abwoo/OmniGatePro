@@ -30,6 +30,37 @@ async def get_system_status() -> str:
     res = await omni_engine.skills["system"].execute("get_info")
     return str(res.get("data", "Unknown"))
 
+@mcp.tool()
+async def analyze_system_performance() -> str:
+    """
+    深度性能分析工具：利用 Python psutil 库提供比 Node.js 更精准的硬件负载分析。
+    """
+    import psutil
+    cpu = psutil.cpu_percent(interval=1)
+    mem = psutil.virtual_memory()
+    disk = psutil.disk_usage('/')
+    return (
+        f"📊 系统深度负载报告:\n"
+        f"- CPU 占用: {cpu}%\n"
+        f"- 内存: 已用 {mem.percent}% (剩余 {mem.available // 1024**2}MB)\n"
+        f"- 磁盘: 已用 {disk.percent}%"
+    )
+
+@mcp.tool()
+async def search_local_files(query: str, path: str = ".") -> str:
+    """
+    极速文件检索工具：在指定目录下快速查找包含关键词的文件。
+    """
+    import os
+    results = []
+    for root, dirs, files in os.walk(path):
+        if "node_modules" in root or ".git" in root: continue
+        for file in files:
+            if query.lower() in file.lower():
+                results.append(os.path.join(root, file))
+        if len(results) > 10: break
+    return "\n".join(results) if results else "未找到相关文件。"
+
 if __name__ == "__main__":
     # 启动 MCP 服务器 (标准 IO 模式，方便 Clawdbot 挂载)
     mcp.run()

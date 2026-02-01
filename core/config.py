@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     VERSION: str = "2.0.0"
     
     # Database Config
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./artfish_studio.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./omnigate_pro.db")
     
     # Telegram Config
     TELEGRAM_BOT_TOKEN: Optional[str] = os.getenv("TELEGRAM_BOT_TOKEN")

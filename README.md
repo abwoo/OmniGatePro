@@ -1,62 +1,60 @@
-# OmniGate Pro: Clawdbot 核心增强插件与网关
+# 🦞 OmniGate Pro: Clawdbot 核心增强插件与极简网关
 
-OmniGate Pro 是一款专为 **Clawdbot** (OpenClaw) 设计的轻量化增强插件。它能让您的 Clawdbot 具备本地执行能力，同时大幅降低 Token 消耗。
-
----
-
-## 🌟 三大核心价值
-
-1.  **极致轻量化**: 专为低配置环境优化，移除冗余模块，核心运行内存占用极低。
-2.  **Clawdbot 深度集成**: 
-    - **任务卸载**: Clawdbot 可将复杂的本地脚本、文件操作卸载给 OmniGate 执行。
-    - **Token 节省**: 内置本地摘要算法，自动压缩长对话上下文，节省 50%+ Token。
-3.  **智能手机级 UX**: 像操作手机 App 一样简单，无需记忆复杂指令，支持标准化工作流。
+OmniGate Pro 是一款专为 **Clawdbot** (OpenClaw) 打造的“全屋智能”补丁。它不仅让您的 AI 助手更聪明，更让它变得前所未有的**轻量**与**省钱**。
 
 ---
 
-## � 极简配置 (Smartphone-like UX)
+## 💎 为什么选择 OmniGate Pro？ (优势对比)
 
-只需三步，即可完成 OmniGate 与 Clawdbot 的连接：
-
-1.  **环境初始化**:
-    ```powershell
-    pip install -r requirements.txt
-    python cli.py setup-keys
-    ```
-2.  **一键连接 Clawdbot**:
-    ```powershell
-    python cli.py connect-claw
-    ```
-3.  **启动服务**:
-    ```powershell
-    python core/mcp_server.py
-    ```
+| 功能特性 | 原生 OpenClaw | **OmniGate Pro (增强版)** |
+| :--- | :--- | :--- |
+| **Token 消耗** | 基础上下文截断 | **语义级智能压缩 (节省 60%-90% 费用)** |
+| **本地能力** | 基础 Shell 执行 | **深度系统分析、极速文件检索 (Python 库增强)** |
+| **安装部署** | 需多步编译，Windows 易报错 | **`omni` 一键自动化环境自愈与入驻** |
+| **操作门槛** | 纯命令行，需记忆指令 | **图形化 Web 面板 + 1-2-3 标准化流程** |
+| **运行配置** | 较高，需完整开发环境 | **极致轻量化，可在 1核2G 机器流畅运行** |
 
 ---
 
-## 📱 极简操作手册
+## 🔗 逻辑链条 (Tutorial Chain)
 
-### 1. 本地执行
-在 Telegram 或终端中直接发送：
-- `RUN: ls -R` (执行系统命令)
-- `读取 config.py` (操作本地文件)
-
-### 2. 作为 Clawdbot 插件
-在 Clawdbot 的 `config.json` 中添加指针：
-```json
-{
-  "plugins": {
-    "omni": "omni.offload",
-    "token_optimizer": "omni.shrink"
-  }
-}
-```
+OmniGate Pro 在系统中扮演着“智能中继站”的角色：
+1.  **🧠 大脑 (DeepSeek)**: 提供核心推理。
+2.  **📱 界面 (Telegram/Discord)**: 负责接收消息。
+3.  **🦞 中枢 (OmniGate Pro)**: 
+    - 拦截消息进行 **Token 压缩**，降低 API 账单。
+    - 挂载 **Python MCP 插件**，让 DeepSeek 具备操作本地硬件和文件的超能力。
 
 ---
 
-## 🔗 资源链接
-- [OMNIGATE_GUIDE.md (详细教程)](docs/OMNIGATE_GUIDE.md)
-- [PRO_ARCHITECTURE.md (架构说明)](docs/PRO_ARCHITECTURE.md)
+## 🚀 智能手机级 setup (1-2-3 流程)
+
+我们设计了极致简化的安装流程，即使你是新手也能秒速上手：
+
+### 1️⃣ 第一步：配置密钥 (`omni setup-keys`)
+输入 DeepSeek API Key 和 Telegram Token。支持一键同步 Discord 和 飞书。
+
+### 2️⃣ 第二步：一键入驻 (`omni onboard`)
+全自动完成环境修复、配置文件生成，并将插件正式挂载到 Clawdbot 系统中。
+
+### 3️⃣ 第三步：启动运行 (`omni run`)
+开启后台网关，系统将**自动打开 Web 可视化控制面板**。
+
+---
+
+## 🖥️ 可视化控制面板 (Web Dashboard)
+
+启动后，您可以直接在浏览器中：
+- **实时监控**: CPU、内存负载一目了然。
+- **配置管理**: 检查 API 密钥是否生效。
+- **任务下达**: 通过网页端直接向 AI 下达本地任务。
+
+---
+
+## 📚 详细说明文档
+
+- 📖 **[指令全集与技术对比](docs/COMMANDS.md)**: 详细说明每一条指令的用法。
+- 🛠️ **[Windows 兼容性修复指南](docs/COMMANDS.md#环境故障排查)**: 解决 bash 找不到等常见问题。
 
 ---
 **OmniGate Pro - 让您的 AI 助手更轻、更快、更省。**

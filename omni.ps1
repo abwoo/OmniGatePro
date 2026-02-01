@@ -3,7 +3,7 @@
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "Starting EduSense AI Gateway..." -ForegroundColor Cyan
+Write-Host "Starting OmniGate Pro Gateway..." -ForegroundColor Cyan
 
 # 1. Check Python
 try {
