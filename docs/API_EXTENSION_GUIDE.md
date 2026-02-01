@@ -1,6 +1,6 @@
-# Artfish API 扩展指南 (API Extension Guide)
+# OmniGate Pro API 扩展指南 (API Extension Guide)
 
-Artfish 采用类似于 **Clawdbot** 的“指针式”调用架构。通过 `APIEngine`，你可以使用统一的字符串标识符调用不同的第三方服务。
+OmniGate Pro 采用类似于 **Clawdbot** 的“指针式”调用架构。通过 `APIEngine`，你可以使用统一的字符串标识符调用不同的第三方服务。
 
 ## 1. 核心概念
 

@@ -1,83 +1,77 @@
-# Artfish Studio Pro 学习与操作手册
+# OmniGate Pro 学习与操作手册
 
-欢迎来到 **Artfish Studio Pro**！这是一个基于高度可扩展多智能体 (Multi-Agent) 架构的艺术教育与协作平台。
+欢迎来到 **OmniGate Pro**！这是一个开源、自托管的 AI 智能体网关，以“消息优先+本地执行+自主行动”为核心逻辑，旨在作为 Clawdbot (OpenClaw) 的核心增强插件。
 
-为了让你能够顺利掌握系统，我们建议按照以下 **“从本地到云端”** 的顺序逐步操作。
+为了让你能够顺利掌握系统，我们建议按照以下顺序逐步操作。
 
 ---
 
-## 🏗️ 第一阶段：本地环境与核心引擎 (Basics)
+## 🏗️ 第一阶段：环境初始化 (Basics)
 
-在这一阶段，我们不需要任何复杂的外部配置，重点是验证系统的“大脑”是否正常工作。
+在这一阶段，我们确保本地运行环境就绪。
 
-### 1. 环境初始化
+### 1. 安装依赖
 ```powershell
-# 安装核心依赖 (已优化，无需 C++ 编译环境)
+# 安装核心依赖
 pip install -r requirements.txt
+# 以开发模式安装项目
+pip install -e .
+```
 
-# 运行系统自检
-python cli.py doctor
+### 2. 系统自检
+```powershell
+# 运行环境诊断
+omni doctor
 ```
 *如果你看到 `Redis | OFFLINE`，请不要担心，系统会自动切换到本地模拟模式。*
 
-### 2. 验证 API 指针引擎
-Artfish 使用“指针”来调用 API。即使你没有配置真实的 Key，你也可以观察到系统是如何调度这些请求的。
+---
+
+## 🔌 第二阶段：Clawdbot 集成 (Clawdbot Integration)
+
+OmniGate Pro 的核心价值在于为 Clawdbot 提供本地执行力。
+
+### 1. 全自动入驻
+运行此命令，系统会自动配置 OpenClaw 及其插件，绕过繁琐的 TUI 向导。
 ```powershell
-$env:PYTHONPATH = "."; python demo_api_engine.py
+omni onboard
 ```
 
-### 3. 体验多 Agent 艺术协作 (核心功能)
-直接在控制台观看专家 Agent 们的灵感碰撞。
+### 2. 启动网关
+启动 OmniGate 网关（包含 MCP 服务器和 REST API），让 Clawdbot 可以调用本地技能。
 ```powershell
-$env:PYTHONPATH = "."; python demo_art_pro.py
+omni gateway --verbose
 ```
-**在这个演示中，你会看到：**
-- **学术辩论**：针对“AI 艺术原创性”的正反方交锋。
-- **互动工坊**：导师与艺术家之间的多轮启发式对话。
-- **协同创作**：从理论到构想的完整工作流。
 
 ---
 
-## 🔑 第二阶段：配置与 AI 模型接入 (AI Integration)
+## 🤖 第三阶段：智能体交互 (Agent Action)
 
-当你熟悉了本地流程后，可以开始接入真实的 AI 模型，让 Agent 的回复更加智能。
+你可以直接在终端下达指令，验证 Agent 的本地执行能力。
 
-1.  **获取密钥**：准备好 OpenAI, DeepSeek 或其他厂商的 API Key。
-2.  **配置向导**：
-    ```powershell
-    python cli.py setup-keys
-    ```
-    *按照提示输入密钥，系统会自动生成 `.env` 配置文件。*
+### 1. 执行本地任务
+```powershell
+omni agent --message "帮我检查当前系统的健康状况，并列出目录下的重要文件" --thinking high
+```
 
----
-
-## 🤖 第三阶段：多平台接口接入 (Interface)
-
-最后，你可以将这一套强大的 Agent 系统对接到社交平台。
-
-1.  **Telegram 机器人**：
-    ```powershell
-    python interfaces/telegram_bot.py
-    ```
-    - 使用 `/debate` 发起辩论。
-    - 使用 `/collab` 发起协作。
-2.  **飞书推送验证**：
-    ```powershell
-    python demo_feishu.py
-    ```
+### 2. 跨平台消息
+```powershell
+omni message send --to "+1234567890" --message "OmniGate Pro 已就绪"
+```
 
 ---
 
-## 🧩 进阶：自定义你的 Agent
+## 🛠️ 进阶：自定义技能 (Custom Skills)
 
-你可以通过修改 `core/agents/art_agents.py` 来定义自己的 Agent 角色和性格。系统会自动为你的 Agent 匹配合适的语调和评价维度。
-
----
-
-## �️ 常见问题排查 (Troubleshooting)
-
-- **Conflict 错误**：如果你在启动 Telegram 时看到 Conflict，说明后台有残留进程。请运行 `Stop-Process -Name "python" -Force`。
-- **缺失 C++ 编译环境**：我们已经将 gRPC 设为可选，如果安装报错，请检查 `requirements.txt` 中相关行是否已注释。
+你可以通过在 `core/skills/` 目录下添加新的 Python 类来扩展系统的能力。每个技能都可以通过“指针”在 Clawdbot 中被动态调用。
 
 ---
-**Artfish Studio Pro - 释放 AI 的创意潜能**
+
+## ❓ 常见问题排查 (Troubleshooting)
+
+- **指令未找到**：如果 `omni` 指令无法运行，请确保已执行 `pip install -e .`。
+- **端口占用**：如果网关启动失败，请检查 18789 端口是否被占用。
+- **Token 压缩失效**：请确保在 OpenClaw 配置中正确挂载了 `omni.shrink` 指针。
+
+---
+**OmniGate Pro - 让 AI 助手更轻、更快、更智能**
