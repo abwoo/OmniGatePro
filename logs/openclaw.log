@@ -1,0 +1,38 @@
+
+> openclaw@2026.1.30 openclaw D:\artfish\openclaw\openclaw
+> node scripts/run-node.mjs "gateway" "--port" "18789"
+
+Invalid config at C:\Users\13803\.openclaw\openclaw.json:\n- models.providers.deepseek: Unrecognized key: "enabled"
+- channels.telegram.allowFrom: channels.telegram.dmPolicy="open" requires channels.telegram.allowFrom to include "*"
+- <root>: Unrecognized key: "mcpServers"
+Invalid config at C:\Users\13803\.openclaw\openclaw.json:\n- models.providers.deepseek: Unrecognized key: "enabled"
+- channels.telegram.allowFrom: channels.telegram.dmPolicy="open" requires channels.telegram.allowFrom to include "*"
+- <root>: Unrecognized key: "mcpServers"
+[90m│[39m
+[32m◇[39m  [0mConfig[0m [90m───────────────────────────────────────────────────╮[39m
+[90m│[39m                                                            [90m│[39m
+[90m│[39m  [2mConfig invalid; doctor will run with best-effort config.[22m  [90m│[39m
+[90m│[39m                                                            [90m│[39m
+[90m├────────────────────────────────────────────────────────────╯[39m
+[90m│[39m
+[32m◇[39m  [0mUnknown config keys[0m [90m─────────────────╮[39m
+[90m│[39m                                       [90m│[39m
+[90m│[39m  [2m- models.providers.deepseek.enabled[22m  [90m│[39m
+[90m│[39m  [2m- mcpServers[22m                         [90m│[39m
+[90m│[39m                                       [90m│[39m
+[90m├───────────────────────────────────────╯[39m
+[90m│[39m
+[32m◇[39m  [0mDoctor[0m [90m────────────────────────────────────────────╮[39m
+[90m│[39m                                                     [90m│[39m
+[90m│[39m  [2mRun "openclaw doctor --fix" to remove these keys.[22m  [90m│[39m
+[90m│[39m                                                     [90m│[39m
+[90m├─────────────────────────────────────────────────────╯[39m
+Config invalid
+File: C:\Users\13803\.openclaw\openclaw.json
+Problem:
+  - models.providers.deepseek: Unrecognized key: "enabled"
+  - channels.telegram.allowFrom: channels.telegram.dmPolicy="open" requires channels.telegram.allowFrom to include "*"
+  - <root>: Unrecognized key: "mcpServers"
+
+Run: openclaw doctor --fix
+ ELIFECYCLE  Command failed with exit code 1.

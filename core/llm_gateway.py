@@ -16,12 +16,21 @@ class LLMGateway:
     def __init__(self):
         self.network = NetworkClient()
         self.usage_stats = {} # 简单统计，实际应存入数据库
+        self._refresh_providers()
+
+    def _refresh_providers(self):
+        """从环境变量动态刷新提供商配置"""
+        import os
         self.providers = {
-            "openai": {"key": settings.OPENAI_API_KEY, "base_url": "https://api.openai.com/v1"},
-            "claude": {"key": settings.CLAUDE_API_KEY, "base_url": "https://api.anthropic.com/v1"},
-            "gemini": {"key": settings.GEMINI_API_KEY, "base_url": "https://generativelanguage.googleapis.com/v1"},
-            "deepseek": {"key": settings.DEEPSEEK_API_KEY, "base_url": "https://api.deepseek.com/v1"},
-            "qwen": {"key": settings.QWEN_API_KEY, "base_url": "https://dashscope.aliyuncs.com/api/v1"},
+            "openai": {"key": os.getenv("OPENAI_API_KEY"), "base_url": "https://api.openai.com/v1"},
+            "claude": {"key": os.getenv("CLAUDE_API_KEY"), "base_url": "https://api.anthropic.com/v1"},
+            "gemini": {"key": os.getenv("GEMINI_API_KEY"), "base_url": "https://generativelanguage.googleapis.com/v1"},
+            "deepseek": {"key": os.getenv("DEEPSEEK_API_KEY"), "base_url": "https://api.deepseek.com/v1"},
+            "groq": {"key": os.getenv("GROQ_API_KEY"), "base_url": "https://api.groq.com/openai/v1"},
+            "qwen": {"key": os.getenv("QWEN_API_KEY"), "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1"},
+            "hunyuan": {"key": os.getenv("HUNYUAN_API_KEY"), "base_url": "https://api.hunyuan.tencent.com/v1"},
+            "zhipu": {"key": os.getenv("ZHIPU_API_KEY"), "base_url": "https://open.bigmodel.cn/api/paas/v4"},
+            "wenxin": {"key": os.getenv("WENXIN_API_KEY"), "base_url": "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop"},
         }
 
     async def chat(self, provider: str, prompt: str, user_id: str, model: Optional[str] = None) -> Dict[str, Any]:

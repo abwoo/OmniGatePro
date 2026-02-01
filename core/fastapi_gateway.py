@@ -34,25 +34,21 @@ def get_openclaw_config():
     return {}
 
 def get_bundled_skills():
-    skills_dir = os.path.join("openclaw", "openclaw", "skills")
-    if not os.path.exists(skills_dir):
-        return []
+    native_skills = []
+    native_dir = os.path.join("openclaw", "skills")
+    if os.path.exists(native_dir):
+        try:
+            native_skills = [{"id": item, "type": "native"} for item in os.listdir(native_dir) if os.path.isdir(os.path.join(native_dir, item))]
+        except: pass
     
-    skills = []
-    try:
-        for item in os.listdir(skills_dir):
-            item_path = os.path.join(skills_dir, item)
-            if os.path.isdir(item_path):
-                skill_md = os.path.join(item_path, "SKILL.md")
-                description = "无描述"
-                if os.path.exists(skill_md):
-                    with open(skill_md, "r", encoding="utf-8") as f:
-                        line = f.readline()
-                        if line: description = line.replace("#", "").strip()
-                skills.append({"id": item, "description": description})
-    except:
-        pass
-    return skills
+    dynamic_skills = []
+    dynamic_dir = "skills"
+    if os.path.exists(dynamic_dir):
+        try:
+            dynamic_skills = [{"id": f.replace(".py", ""), "type": "omni_pro"} for f in os.listdir(dynamic_dir) if f.endswith(".py") and f != "__init__.py"]
+        except: pass
+        
+    return native_skills + dynamic_skills
 
 # --- API 接口 ---
 @app.get("/api/status")

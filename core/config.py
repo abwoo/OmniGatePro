@@ -59,8 +59,26 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding='utf-8',
-        case_sensitive=True
+        case_sensitive=True,
+        extra='ignore'
     )
+
+    def reload(self):
+        """重新从 .env 文件和环境变量中加载配置"""
+        import os
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
+        
+        # 遍历所有字段并重新读取
+        for field in self.model_fields:
+            env_val = os.getenv(field)
+            if env_val is not None:
+                # 尝试根据类型转换
+                field_info = self.model_fields[field]
+                if field_info.annotation is bool:
+                    setattr(self, field, env_val.lower() in ("true", "1", "yes", "on", "*"))
+                else:
+                    setattr(self, field, env_val)
 
 # Create global settings instance
 settings = Settings()

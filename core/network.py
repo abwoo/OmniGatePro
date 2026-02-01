@@ -17,9 +17,23 @@ class NetworkClient:
 
     @property
     def client(self) -> httpx.AsyncClient:
-        """延迟加载 httpx 客户端"""
+        """延迟加载 httpx 客户端，并注入代理"""
         if self._client is None or self._client.is_closed:
-            self._client = httpx.AsyncClient(timeout=self.timeout, follow_redirects=True)
+            import os
+            # 统一获取代理地址
+            proxy_url = os.getenv("HTTPS_PROXY") or os.getenv("HTTP_PROXY") or \
+                        os.getenv("https_proxy") or os.getenv("http_proxy")
+            
+            # 确保代理地址格式正确
+            if proxy_url and not proxy_url.startswith("http"):
+                proxy_url = f"http://{proxy_url}"
+
+            self._client = httpx.AsyncClient(
+                timeout=self.timeout, 
+                follow_redirects=True,
+                proxy=proxy_url if proxy_url else None,
+                verify=False # 跳过 SSL 校验以兼容拦截式代理
+            )
         return self._client
 
     @retry(
