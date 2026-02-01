@@ -223,15 +223,48 @@ def setup_keys():
             
     console.print("[bold green]✅ 全平台密钥已同步至 .env 文件。[/bold green]")
 
+def check_openclaw_env() -> List[str]:
+    """深度检测本地 OpenClaw 源码、依赖及构建状态"""
+    checks = []
+    base_path = os.path.join(os.getcwd(), "openclaw", "openclaw")
+    
+    # 1. 源码检测
+    if os.path.exists(base_path):
+        checks.append("[green]✔[/green] OpenClaw 源码: 已就绪")
+    else:
+        checks.append("[red]✘[/red] OpenClaw 源码: 缺失 (请确保已执行 git clone)")
+        return checks
+
+    # 2. 依赖检测 (node_modules)
+    if os.path.exists(os.path.join(base_path, "node_modules")):
+        checks.append("[green]✔[/green] Node 依赖库: 已安装")
+    else:
+        checks.append("[yellow]⚠[/yellow] Node 依赖库: 未检测到 (建议运行 pnpm install)")
+
+    # 3. 构建状态检测 (dist)
+    if os.path.exists(os.path.join(base_path, "dist")):
+        checks.append("[green]✔[/green] 核心构建产物: 已生成")
+    else:
+        checks.append("[yellow]⚠[/yellow] 核心构建产物: 缺失 (建议运行 pnpm build)")
+
+    # 4. 运行时环境 (Node.js 版本)
+    try:
+        node_version = subprocess.check_output(["node", "-v"]).decode().strip()
+        checks.append(f"[green]✔[/green] Node.js 运行时: {node_version}")
+    except:
+        checks.append("[red]✘[/red] Node.js 运行时: 未找到")
+
+    return checks
+
 @app.command()
 def onboard():
-    """2. 一键入驻：全自动配置 Clawdbot 及其 OmniGate 增强插件"""
-    console.print(Panel("[bold cyan]第二步：Clawdbot + OmniGate 联合入驻 (全量模型同步)[/bold cyan]"))
+    """2. 一键入驻：全自动配置 Clawdbot 及其 OmniGate 增强插件 (带深度环境审计)"""
+    console.print(Panel("[bold cyan]第二步：Clawdbot + OmniGate 深度入驻校验[/bold cyan]"))
     
     if not os.path.exists(".env"):
         setup_keys()
     
-    # 读取环境变量
+    # 1. 基础配置同步
     env_vars = {}
     with open(".env", "r") as f:
         for line in f:
@@ -240,13 +273,11 @@ def onboard():
                 if len(parts) == 2:
                     env_vars[parts[0].strip()] = parts[1].strip()
 
-    # 路径准备
     home = os.path.expanduser("~")
     openclaw_dir = os.path.join(home, ".openclaw")
     workspace_dir = os.path.join(openclaw_dir, "workspace")
     os.makedirs(workspace_dir, exist_ok=True)
 
-    # 读取现有配置
     config_path = os.path.join(openclaw_dir, "openclaw.json")
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as f:
@@ -254,10 +285,8 @@ def onboard():
             except: config = {}
     else: config = {}
 
-    # --- 1. 通道连接 (Channels) ---
+    # --- 自动化配置同步 ---
     if "channels" not in config: config["channels"] = {}
-    
-    # Telegram
     config["channels"]["telegram"] = {
         "enabled": True,
         "botToken": env_vars.get("TELEGRAM_BOT_TOKEN", ""),
@@ -265,7 +294,6 @@ def onboard():
         "dmPolicy": "open"
     }
     
-    # Discord
     if env_vars.get("DISCORD_BOT_TOKEN"):
         config["channels"]["discord"] = {
             "enabled": True,
@@ -273,14 +301,11 @@ def onboard():
             "dmPolicy": "open"
         }
 
-    # --- 2. 模型提供商 (Providers) ---
     if "models" not in config: config["models"] = {}
     if "providers" not in config["models"]: config["models"]["providers"] = {}
-    
     providers = config["models"]["providers"]
 
-    # 批量同步主流模型
-    def add_provider(name, base_url, api_type, model_id, model_name):
+    def sync_provider(name, base_url, api_type, model_id, model_name):
         key = env_vars.get(f"{name.upper()}_API_KEY")
         if key:
             providers[name] = {
@@ -291,52 +316,95 @@ def onboard():
                 "models": [{"id": model_id, "name": model_name, "api": api_type}]
             }
 
-    add_provider("deepseek", "https://api.deepseek.com", "openai-completions", "deepseek-chat", "DeepSeek Chat")
-    add_provider("openai", "https://api.openai.com/v1", "openai-completions", "gpt-4o", "GPT-4o")
-    add_provider("qwen", "https://dashscope.aliyuncs.com/compatible-mode/v1", "openai-completions", "qwen-plus", "通义千问 Plus")
-    add_provider("hunyuan", "https://api.hunyuan.tencent.com/v1", "openai-completions", "hunyuan-standard", "腾讯混元")
-    
-    # --- 3. 进阶功能同步 (Voice & Canvas) ---
-    if env_vars.get("ELEVENLABS_API_KEY"):
-        if "voice" not in config: config["voice"] = {}
-        config["voice"]["elevenlabs"] = {
-            "apiKey": env_vars["ELEVENLABS_API_KEY"],
-            "voiceId": env_vars.get("ELEVENLABS_VOICE_ID", "")
-        }
-    
-    if env_vars.get("CANVAS_ENABLED") == "true":
-        config["canvas"] = {
-            "enabled": True,
-            "port": int(env_vars.get("CANVAS_PORT", 18790))
-        }
-    
-    if env_vars.get("EXTRA_AGENTS"):
-        if "agents" not in config: config["agents"] = {}
-        config["agents"]["list"] = ["main"] + [a.strip() for a in env_vars["EXTRA_AGENTS"].split(",")]
-
-    # --- 4. OmniGate 增强配置 ---
-    mcp_config = {
-        "mcpServers": {
-            "omnigate": {
-                "command": "python",
-                "args": [os.path.abspath("core/mcp_server.py")],
-                "env": {"PYTHONPATH": os.path.abspath(".")}
-            }
-        }
-    }
-    mcp_path = os.path.join(workspace_dir, "mcp.json")
-    with open(mcp_path, "w", encoding="utf-8") as f:
-        json.dump(mcp_config, f, indent=2, ensure_ascii=False)
+    # 同步所有潜在模型
+    sync_provider("deepseek", "https://api.deepseek.com", "openai-completions", "deepseek-chat", "DeepSeek Chat")
+    sync_provider("openai", "https://api.openai.com/v1", "openai-completions", "gpt-4o", "GPT-4o")
+    sync_provider("claude", "https://api.anthropic.com/v1", "openai-completions", "claude-3-5-sonnet", "Claude 3.5 Sonnet")
+    sync_provider("gemini", "https://generativelanguage.googleapis.com/v1", "openai-completions", "gemini-1.5-pro", "Gemini 1.5 Pro")
+    sync_provider("groq", "https://api.groq.com/openai/v1", "openai-completions", "llama3-70b-8192", "Groq Llama 3")
+    sync_provider("qwen", "https://dashscope.aliyuncs.com/compatible-mode/v1", "openai-completions", "qwen-plus", "通义千问 Plus")
+    sync_provider("hunyuan", "https://api.hunyuan.tencent.com/v1", "openai-completions", "hunyuan-standard", "腾讯混元")
+    sync_provider("zhipu", "https://open.bigmodel.cn/api/paas/v4", "openai-completions", "glm-4", "智谱清言 GLM-4")
 
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
 
+    # --- 2. 深度校验阶段 ---
+    infra_results = []
+    social_results = []
+    ai_results = []
+    
+    from core.llm_gateway import LLMGateway
+    from core.network import NetworkClient
+    gateway = LLMGateway()
+    network = NetworkClient()
+
+    async def run_verification():
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            console=console
+        ) as progress:
+            
+            # Phase 1: 基础设施审计
+            t1 = progress.add_task("[yellow]阶段 1: 基础设施审计...", total=100)
+            infra_results.extend(check_openclaw_env())
+            progress.update(t1, completed=100)
+
+            # Phase 2: 社交中枢心跳
+            t2 = progress.add_task("[magenta]阶段 2: 社交中枢心跳...", total=100)
+            # Telegram
+            tg_token = env_vars.get("TELEGRAM_BOT_TOKEN")
+            if tg_token:
+                try:
+                    res = await network.get_json(f"https://api.telegram.org/bot{tg_token}/getMe")
+                    if res.get("ok"):
+                        social_results.append(f"[green]✔[/green] Telegram: @{res['result']['username']} (在线)")
+                    else:
+                        social_results.append(f"[red]✘[/red] Telegram: Token 无效")
+                except:
+                    social_results.append(f"[red]✘[/red] Telegram: 连接 API 超时")
+            
+            # Discord
+            if env_vars.get("DISCORD_BOT_TOKEN"):
+                social_results.append(f"[green]✔[/green] Discord: 配置已同步")
+            
+            # Feishu
+            if env_vars.get("FEISHU_APP_ID"):
+                social_results.append(f"[green]✔[/green] Feishu: 配置已同步")
+            
+            progress.update(t2, completed=100)
+
+            # Phase 3: 智能大脑握手 (全量 API)
+            all_providers = ["deepseek", "openai", "claude", "gemini", "groq", "qwen", "hunyuan", "zhipu"]
+            active_providers = [p for p in all_providers if env_vars.get(f"{p.upper()}_API_KEY")]
+            
+            if active_providers:
+                t3 = progress.add_task("[cyan]阶段 3: 智能大脑握手...", total=len(active_providers))
+                for p in active_providers:
+                    progress.update(t3, description=f"[cyan]正在握手 {p.capitalize()}...")
+                    v_res = await gateway.verify_provider(p)
+                    if v_res["status"] == "success":
+                        ai_results.append(f"[green]✔[/green] {p.capitalize()}: 连通正常 ({v_res['latency']}ms)")
+                    else:
+                        ai_results.append(f"[red]✘[/red] {p.capitalize()}: {v_res['message']}")
+                    progress.advance(t3)
+
+    asyncio.run(run_verification())
+
+    # 输出结构化最终报告
+    final_report = (
+        "[bold white]1. 🏗️ 基础设施[/bold white]\n" + "\n".join(infra_results) + "\n\n" +
+        "[bold white]2. 💬 社交渠道[/bold white]\n" + ("\n".join(social_results) if social_results else "[dim]未配置[/dim]") + "\n\n" +
+        "[bold white]3. 🧠 智能大脑[/bold white]\n" + ("\n".join(ai_results) if ai_results else "[dim]未配置[/dim]")
+    )
+    
     console.print(Panel(
-        f"[bold green]✅ 全量配置同步完成！[/bold green]\n\n"
-        f"1. [cyan]模型支持[/cyan]: 已同步 DeepSeek, OpenAI, Qwen, Hunyuan 等主流模型。\n"
-        f"2. [cyan]通道支持[/cyan]: 已连接 Telegram 与 Discord 通道。\n"
-        f"3. [cyan]插件状态[/cyan]: OmniGate Pro 已成功挂载，提供 Token 压缩与本地分析功能。",
-        title="入驻报告"
+        final_report,
+        title="[bold cyan]OmniGate Pro 深度审计报告[/bold cyan]",
+        border_style="cyan"
     ))
 
 def check_port(port: int):
@@ -434,6 +502,70 @@ def version_callback(value: bool):
         console.print(f"OmniGate Pro Version: [bold cyan]{VERSION}[/bold cyan]")
         raise typer.Exit()
 
+@app.command()
+def doctor():
+    """诊断工具：全方位检查系统健康状况与连通性"""
+    console.print(Panel("[bold magenta]OmniGate Pro 系统诊断中心 (Doctor Mode)[/bold magenta]"))
+    
+    # 复用 onboard 的校验逻辑
+    results = []
+    from core.llm_gateway import LLMGateway
+    from core.network import NetworkClient
+    gateway = LLMGateway()
+    network = NetworkClient()
+
+    async def run_diagnostics():
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console
+        ) as progress:
+            # 1. 检查环境变量
+            t1 = progress.add_task("[cyan]检查配置文件...", total=1)
+            if os.path.exists(".env"):
+                results.append("[green]✔[/green] .env 配置文件: 存在")
+            else:
+                results.append("[red]✘[/red] .env 配置文件: 缺失")
+            progress.advance(t1)
+
+            # 2. 检查网络与 Telegram
+            t2 = progress.add_task("[cyan]检查网络与社交渠道...", total=1)
+            tg_token = os.getenv("TELEGRAM_BOT_TOKEN")
+            if tg_token:
+                try:
+                    res = await network.get_json(f"https://api.telegram.org/bot{tg_token}/getMe")
+                    if res.get("ok"):
+                        results.append(f"[green]✔[/green] Telegram 连通性: 正常 (@{res['result']['username']})")
+                    else:
+                        results.append(f"[red]✘[/red] Telegram 连通性: 失败 ({res.get('description')})")
+                except:
+                    results.append("[red]✘[/red] Telegram 连通性: 网络无法访问 api.telegram.org")
+            progress.advance(t2)
+
+            # 3. 检查 AI 提供商
+            t3 = progress.add_task("[cyan]检查 AI 模型服务...", total=1)
+            providers = ["deepseek", "openai", "qwen"]
+            for p in providers:
+                if os.getenv(f"{p.upper()}_API_KEY"):
+                    v_res = await gateway.verify_provider(p)
+                    if v_res["status"] == "success":
+                        results.append(f"[green]✔[/green] {p.capitalize()} API: 可用 (延迟: {v_res['latency']}ms)")
+                    else:
+                        results.append(f"[red]✘[/red] {p.capitalize()} API: 不可用 ({v_res['message']})")
+            progress.advance(t3)
+
+            # 4. 系统资源
+            t4 = progress.add_task("[cyan]检查系统资源...", total=1)
+            cpu = psutil.cpu_percent()
+            mem = psutil.virtual_memory().percent
+            results.append(f"[green]✔[/green] 系统负载: CPU {cpu}% / 内存 {mem}%")
+            progress.advance(t4)
+
+    asyncio.run(run_diagnostics())
+    
+    report_text = "\n".join(results)
+    console.print(Panel(report_text, title="健康诊断报告", border_style="magenta"))
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
@@ -456,6 +588,7 @@ def main(
                 "2️⃣ 一键入驻 [关联 Clawdbot 插件系统]",
                 "3️⃣ 启动运行 [开启终端控制面板]",
                 Separator(),
+                "🩺 系统诊断 [全面健康检查]",
                 "⚙️ 进阶配置 [语音、画布、多智能体]",
                 "🔧 系统自愈 [修复 Windows 兼容报错]",
                 "💡 教程链条 [查看系统底层连接逻辑]",
@@ -468,6 +601,7 @@ def main(
         if "配置密钥" in choice: setup_keys()
         elif "一键入驻" in choice: onboard()
         elif "启动运行" in choice: run()
+        elif "系统诊断" in choice: doctor()
         elif "进阶配置" in choice: setup_advanced()
         elif "系统自愈" in choice: fix()
         elif "教程链条" in choice:

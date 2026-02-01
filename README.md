@@ -23,6 +23,9 @@ curl -sSL https://raw.githubusercontent.com/abwoo/OmniGatePro/main/install.sh | 
 
 为了让您快速掌握系统，我们将所有操作分门别类，您可以点击下方链接跳转至详细文档：
 
+### 🏗️ [OpenClaw 底层配置与集成逻辑](docs/OPENCLAW_SETUP.md)
+- **必读**: 详细说明如何从源码构建 OpenClaw 引擎，以及它与 OmniGate Pro 的共生关系。
+
 ### 🚀 [快速开始 (1-2-3 流程)](docs/FEATURES_GUIDE.md#🚀-智能手机级-setup-1-2-3-流程)
 - 密钥配置、一键入驻、启动运行。
 
@@ -55,6 +58,16 @@ curl -sSL https://raw.githubusercontent.com/abwoo/OmniGatePro/main/install.sh | 
 ---
 
 ## 🔗 逻辑链条 (Tutorial Chain)
+
+```text
+[ 用户 ] ↔ [ Telegram/Discord ] 
+               ↕ (协议对接)
+         [ OpenClaw Engine ]
+               ↕ (MCP 协议嵌入)
+         [ OmniGate Pro ] ↔ [ DeepSeek / OpenAI ]
+               ↕ (本地执行)
+         [ 🧩 本地技能插件 ]
+```
 
 1.  **🧠 大脑 (DeepSeek)**: 推理大脑。
 2.  **📱 界面 (Telegram/Discord)**: 交互入口。

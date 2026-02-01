@@ -109,6 +109,45 @@ class LLMGateway:
         await asyncio.sleep(0.2) # 模拟网络延迟
         return f"[来自 {provider.upper()} 的回复] 针对您的艺术创作请求 '{prompt[:20]}...'，我建议您可以尝试增加一些对比度。"
 
+    async def verify_provider(self, provider: str) -> Dict[str, Any]:
+        """校验指定提供商的 API 连通性"""
+        if provider not in self.providers or not self.providers[provider]["key"]:
+            return {"status": "fail", "message": "Key not configured"}
+        
+        info = self.providers[provider]
+        headers = {"Authorization": f"Bearer {info['key']}"}
+        
+        # 不同厂商的心跳/模型列表接口
+        verify_endpoints = {
+            "openai": "/models",
+            "deepseek": "/models",
+            "claude": "/models", 
+            "gemini": "/models",
+            "groq": "/models",
+            "qwen": "/models",
+            "hunyuan": "/models",
+            "zhipu": "/models",
+            "wenxin": "/models"
+        }
+        
+        endpoint = verify_endpoints.get(provider, "/models")
+        # 兼容性处理：如果 base_url 已经包含 /v1，则直接拼接
+        url = f"{info['base_url'].rstrip('/')}{endpoint}"
+        if "/v1/v1" in url: url = url.replace("/v1/v1", "/v1")
+        
+        try:
+            async with self.network.client as client:
+                start = time.time()
+                response = await client.get(url, headers=headers, timeout=5.0)
+                latency = int((time.time() - start) * 1000)
+                
+                if response.status_code == 200:
+                    return {"status": "success", "latency": latency}
+                else:
+                    return {"status": "fail", "message": f"HTTP {response.status_code}", "detail": response.text[:100]}
+        except Exception as e:
+            return {"status": "fail", "message": str(e)}
+
     def _record_usage(self, user_id: str, provider: str, duration: float):
         if user_id not in self.usage_stats:
             self.usage_stats[user_id] = {"total_calls": 0, "providers": {}, "total_latency": 0}
